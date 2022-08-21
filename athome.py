@@ -2,12 +2,12 @@ import os
 from time import sleep
 import paho.mqtt.client as mqttc
 
-ping_host = ("192.168.2.151", "192.168.2.186")
+ping_host = ("192.168.2.150", "192.168.2.160")
 mqtt_host = "hackzhu.com"
 mqtt_port = 1883
 
 
-def mpub(mpayload="1", mtopic="home/athome", mqos=0):
+def mpub(mpayload="1", mtopic="hass/athome", mqos=0):
     mclient = mqttc.Client()
     mclient.connect(mqtt_host, mqtt_port, 60)
     mclient.publish(mtopic, mpayload, mqos)
@@ -20,13 +20,16 @@ def ping():
             return 1
     return 0
 
+# TODO 应使用虚拟按键来做第一判断项，要是有孩子最好是实体按键加虚拟按键并在主页显示
+def main():
+    ping_status = ping()
+    if ping_status == 1:
+        mpub(1)
+        return 1
+    else:
+        mpub(0)
+        return 0
+
 
 if __name__ == "__main__":
-    while 1:
-        sleep(10)
-        pingstatus = ping()
-        if pingstatus == 1:
-            mpub(1)
-            break
-        else:
-            continue
+    main()
