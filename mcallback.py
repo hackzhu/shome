@@ -1,4 +1,3 @@
-from sqlite3 import connect
 import paho.mqtt.client as mqtt
 
 mhost = "hackzhu.com"
@@ -13,10 +12,11 @@ def mcon():
 
 def mmsg(client, userdata, msg):
     mpayload = str(msg.payload)[2:-1]
-    if mpayload == '1':
-        print('this is 1')
-    elif mpayload=='2':
-        print('this is 2')
+    match mpayload:
+        case '1':
+            print('this is 1')
+        case '2':
+            print('this is 2')
 
 
 def msub():
