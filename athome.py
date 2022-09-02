@@ -1,8 +1,8 @@
 import os
-from time import sleep
 import paho.mqtt.client as mqttc
 
-ping_host = ("192.168.2.151", "192.168.2.160")
+with open('userhost') as hf:
+    user_host = hf.read().splitlines()
 mqtt_host = "hackzhu.com"
 mqtt_port = 1883
 
@@ -14,7 +14,7 @@ def mpub(mpayload="1", mtopic="hass/athome", mqos=0):
 
 
 def ping():
-    for h in ping_host:
+    for h in user_host:
         response = os.system("ping -c 1 -W 500 " + h + " >/dev/null 2>&1")
         if response == 0:
             return 1
@@ -25,9 +25,11 @@ def ping():
 
 def main():
     ping_status = ping()
-    if not os.path.exists('tmp'):
-        os.mkdir('tmp')
-    old_status_file = open('tmp/old_status.txt', 'w+')
+    if not os.path.exists('tmp/athome_old_status'):
+        if not os.path.exists('tmp'):
+            os.mkdir('tmp')
+        os.system('touch tmp/athome_old_status')
+    old_status_file = open('tmp/athome_old_status', 'w+')
     old_status_file.seek(0, 0)
     old_status = old_status_file.read()
     if ping_status == 1:
