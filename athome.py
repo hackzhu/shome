@@ -25,7 +25,9 @@ def ping():
 
 def main():
     ping_status = ping()
-    old_status_file = open('old_status.txt', 'w+')
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+    old_status_file = open('tmp/old_status.txt', 'w+')
     old_status_file.seek(0, 0)
     old_status = old_status_file.read()
     if ping_status == 1:
