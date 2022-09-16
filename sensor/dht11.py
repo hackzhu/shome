@@ -7,7 +7,7 @@ mqtt_host = "home.hackzhu.com"
 mqtt_port = 1883
 
 
-def mpub(mpayload="1", mtopic="hass/wenshi", mqos=0):
+def mpub(mpayload="1", mtopic="homeassistant/dht11", mqos=0):
     mclient = mqttc.Client()
     mclient.connect(mqtt_host, mqtt_port, 60)
     mclient.publish(mtopic, mpayload, mqos)

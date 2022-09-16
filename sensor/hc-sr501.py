@@ -5,7 +5,7 @@ import paho.mqtt.client as mqttc   # 引入MQTT协议
 mqtt_host="home.hackzhu.com"
 mqtt_port=1883
 
-def mpub(mpayload="1", mtopic="hass/person", mqos=0):
+def mpub(mpayload="1", mtopic="homeassistant/person", mqos=0):
     mclient = mqttc.Client()
     mclient.connect(mqtt_host, mqtt_port, 60)
     mclient.publish(mtopic, mpayload, mqos)
@@ -35,7 +35,7 @@ def detct():
         #如果感应器针脚输出为True，则打印信息并执行蜂鸣器函数
         if GPIO.input(12) == True:
             print ("Someone isclosing!")
-            mpub("Someone isclosing!","hass/person")
+            mpub("Someone isclosing!", "homeassistant/person")
             beep()
 
 

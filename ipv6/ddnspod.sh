@@ -16,4 +16,5 @@ ddns_data="$data&record_id=$record_id&record_type=$record_type&value=$new_ip&rec
 if [ $old_ip != $new_ip ]
 then
     curl -X POST -s -A $agent -d $ddns_data $dnsapi_ddns
+    mosquitto_pub -h home.hackzhu.com -t homeasstant/ddns -m 1
 fi

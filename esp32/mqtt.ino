@@ -2,11 +2,11 @@
 #include <PubSubClient.h>
 
 // WiFi
-const char *ssid = "wifiboxs";        // Enter your WiFi name
+const char *ssid = "wifiboxs";       // Enter your WiFi name
 const char *password = "gxdx28b312"; // Enter WiFi password
 
 // MQTT Broker
-const char *mqtt_broker = "broker.emqx.io";
+const char *mqtt_broker = "home.hackzhu.com";
 const char *topic = "homeassistant/esp32/test";
 const char *mqtt_username = "biye";
 const char *mqtt_password = "dachuang";
@@ -18,7 +18,7 @@ PubSubClient client(espClient);
 void setup()
 {
     // Set software serial baud to 115200;
-    Serial.begin(115200);
+    Serial.begin(9600);
     // connecting to a WiFi network
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED)
