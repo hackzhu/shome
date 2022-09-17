@@ -1,0 +1,9 @@
+version: '3'
+services:
+  emqx:
+    image: emqx/emqx
+    restart: unless-stopped
+    poets:
+    - 1883:1883
+    - 8083:8083
+    - 18083:18083
