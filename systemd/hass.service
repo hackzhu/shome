@@ -1,11 +1,10 @@
 [Unit]
 Description=hass service
-After=network.target syslog.target
 
 [Service]
 Type=simple
-User=unique
-ExecStart=/home/unique/.local/bin/hass -c /home/unique/.homeassistant
+User=zhu
+ExecStart=/usr/bin/python /home/zhu/script/fan.py
 Restart=always
 RestartSec=5
 StartLimitInterval=0

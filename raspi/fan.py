@@ -1,3 +1,4 @@
+from time import sleep
 import RPi.GPIO as GPIO
 
 
@@ -17,6 +18,7 @@ def main():
             GPIO.output(channel, GPIO.LOW)
         if temp < 40.0:
             GPIO.output(channel, GPIO.HIGH)
+        sleep(10)
 
 
 if __name__ == '__main__':
