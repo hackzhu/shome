@@ -1,11 +1,11 @@
 [Unit]
-Description=hass service
+Description=ddnspod service
 After=network.target syslog.target
 
 [Service]
 Type=simple
 User=zhu
-ExecStart=/home/zhu/.local/bin/hass -c /home/zhu/.homeassistant
+ExecStart=/usr/bin/bash /home/zhu/script/ddnspod.sh
 Restart=always
 RestartSec=5
 StartLimitInterval=0
