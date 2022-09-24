@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 tmp
+test
 # C extensions
 *.so
 ?.yml

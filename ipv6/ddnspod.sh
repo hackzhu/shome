@@ -14,8 +14,8 @@ list_json=$(curl -X POST -s -A $agent -d $data $dnsapi_list)
 old_ip=$(echo $list_json | sed 's/.*,"value":"\([0-9a-fA-F\.\:]*\)".*/\1/')
 record_id=$(echo $list_json | sed 's/.*"id":"\([0-9]*\)".*/\1/')
 ddns_data="$data&record_id=$record_id&record_type=$record_type&value=$new_ip&record_line=%e9%bb%98%e8%ae%a4"
-if [ $old_ip != $new_ip ]
+if [[ $old_ip != $new_ip ]]
 then
-    curl -X POST -s -A $agent -d $ddns_data $dnsapi_ddns
+    curl -6 -X POST -s -A $agent -d $ddns_data $dnsapi_ddns
     mosquitto_pub -h home.hackzhu.com -t homeasstant/ddns -m 1
 fi
