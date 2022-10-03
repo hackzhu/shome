@@ -102,6 +102,9 @@ python:paho.mqtt
 
 #### 前端管理
 
+python flask 框架
+hass 侧边仪表盘添加网页卡片（可以不用 supervisor）
+
 #### 远程管理
 
 ##### ipv6

@@ -3,6 +3,7 @@ old_status.txt
 __pycache__/
 *.py[cod]
 *$py.class
+upload/
 tmp
 test
 # C extensions

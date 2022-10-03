@@ -3,4 +3,5 @@ paho.mqtt
 pyserial
 python-opencv
 pillow
-pencv-contrib-python
+opencv-contrib-python
+flask

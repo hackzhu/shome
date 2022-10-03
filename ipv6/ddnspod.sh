@@ -1,6 +1,6 @@
 #/usr/bin/bash
 
-# new_ip=::1
+#new_ip="2001:0250:3401:6000:0000:0000:30c6:ceb7"
 new_ip=$(ip -6 a|grep inet6|grep -v ::1|grep -v fe80|cut -d "/" -f1|awk '{print $2}'|head -n 1)
 token="336294,4da657cefe9db0f9ee4e882cf9a8986a"
 sub_domain="home"
@@ -16,6 +16,6 @@ record_id=$(echo $list_json | sed 's/.*"id":"\([0-9]*\)".*/\1/')
 ddns_data="$data&record_id=$record_id&record_type=$record_type&value=$new_ip&record_line=%e9%bb%98%e8%ae%a4"
 if [[ $old_ip != $new_ip ]]
 then
-    curl -6 -X POST -s -A $agent -d $ddns_data $dnsapi_ddns
+    curl -X POST -s -A $agent -d $ddns_data $dnsapi_ddns
     mosquitto_pub -h home.hackzhu.com -t homeasstant/ddns -m 1
 fi

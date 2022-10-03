@@ -13,7 +13,7 @@ Total_face_num = 999  # 已经被识别有用户名的人脸个数,
 
 
 def init():  # 将config文件内的信息读入到字典中
-    f = open('config.txt')
+    f = open('opencv/config.txt')
     global Total_face_num
     Total_face_num = int(f.readline())
 
@@ -27,7 +27,8 @@ def init():  # 将config文件内的信息读入到字典中
 init()
 
 # 加载OpenCV人脸检测分类器Haar
-face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+face_cascade = cv2.CascadeClassifier(
+    "opencv/haarcascade_frontalface_default.xml")
 
 # 准备好识别方法LBPH方法
 recognizer = cv2.face.LBPHFaceRecognizer_create()
@@ -86,7 +87,8 @@ def Get_new_face():
             sample_num += 1
             # 保存图像，把灰度图片看成二维数组来检测人脸区域，这里是保存在data缓冲文件夹内
             T = Total_face_num
-            cv2.imwrite("./data/User." + str(T) + '.' + str(sample_num) + '.jpg', gray[y:y + h, x:x + w])
+            cv2.imwrite("./data/User." + str(T) + '.' +
+                        str(sample_num) + '.jpg', gray[y:y + h, x:x + w])
 
         pictur_num = 1000  # 表示摄像头拍摄取样的数量,越多效果越好，但获取以及训练的越慢
 
@@ -96,8 +98,10 @@ def Get_new_face():
         else:  # 控制台内输出进度条
             l = int(sample_num / pictur_num * 50)
             r = int((pictur_num - sample_num) / pictur_num * 50)
-            print("\r" + "%{:.1f}".format(sample_num / pictur_num * 100) + "=" * l + "->" + "_" * r, end="")
-            var.set("%{:.1f}".format(sample_num / pictur_num * 100))  # 控件可视化进度信息
+            print("\r" + "%{:.1f}".format(sample_num /
+                  pictur_num * 100) + "=" * l + "->" + "_" * r, end="")
+            var.set("%{:.1f}".format(sample_num /
+                    pictur_num * 100))  # 控件可视化进度信息
             # tk.Tk().update()
             window.update()  # 刷新控件以实时显示进度
 
@@ -151,7 +155,8 @@ def get_images_and_labels(path):
         id = int(os.path.split(image_path)[-1].split(".")[1])
 
         # 调用熟悉的人脸分类器
-        detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        detector = cv2.CascadeClassifier(
+            'opencv/haarcascade_frontalface_default.xml')
 
         faces = detector.detectMultiScale(img_np)
 
@@ -164,19 +169,19 @@ def get_images_and_labels(path):
 
 def write_config():
     print("新人脸训练结束")
-    f = open('config.txt', "a")
+    f = open('opencv/config.txt', "a")
     T = Total_face_num
     f.write(str(T) + " User" + str(T) + " \n")
     f.close()
     id_dict[T] = "User" + str(T)
 
     # 这里修改文件的方式是先读入内存，然后修改内存中的数据，最后写回文件
-    f = open('config.txt', 'r+')
+    f = open('opencv/config.txt', 'r+')
     flist = f.readlines()
     flist[0] = str(int(flist[0]) + 1) + " \n"
     f.close()
 
-    f = open('config.txt', 'w+')
+    f = open('opencv/config.txt', 'w+')
     f.writelines(flist)
     f.close()
 
@@ -253,8 +258,10 @@ def scan_face():
                 font = cv2.FONT_HERSHEY_SIMPLEX
 
                 # 输出检验结果以及用户名
-                cv2.putText(img, str(user_name), (x + 5, y - 5), font, 1, (0, 0, 255), 1)
-                cv2.putText(img, str(confidence), (x + 5, y + h - 5), font, 1, (0, 0, 0), 1)
+                cv2.putText(img, str(user_name), (x + 5, y - 5),
+                            font, 1, (0, 0, 255), 1)
+                cv2.putText(img, str(confidence),
+                            (x + 5, y + h - 5), font, 1, (0, 0, 0), 1)
 
                 # 展示结果
                 cv2.imshow('camera', img)
@@ -381,19 +388,23 @@ window.geometry('800x500')  # 这里的乘是小x
 
 # 在图形界面上设定标签，类似于一个提示窗口的作用
 var = tk.StringVar()
-l = tk.Label(window, textvariable=var, bg='green', fg='white', font=('Arial', 12), width=50, height=4)
+l = tk.Label(window, textvariable=var, bg='green', fg='white',
+             font=('Arial', 12), width=50, height=4)
 # 说明： bg为背景，fg为字体颜色，font为字体，width为长，height为高，这里的长和高是字符的长和高，比如height=2,就是标签有2个字符这么高
 l.pack()  # 放置l控件
 var.set('人脸识别 by Jun')
 
 # 在窗口界面设置放置Button按键并绑定处理函数
-button_a = tk.Button(window, text='开始刷脸', bg='green', fg='white', font=('Arial', 12), width=10, height=2, command=f_scan_face)
+button_a = tk.Button(window, text='开始刷脸', bg='green', fg='white', font=(
+    'Arial', 12), width=10, height=2, command=f_scan_face)
 button_a.place(x=600, y=120)
 
-button_b = tk.Button(window, text='录入人脸', bg='green', fg='white', font=('Arial', 12), width=10, height=2, command=f_rec_face)
+button_b = tk.Button(window, text='录入人脸', bg='green', fg='white', font=(
+    'Arial', 12), width=10, height=2, command=f_rec_face)
 button_b.place(x=600, y=220)
 
-button_c = tk.Button(window, text='退出', bg='green', fg='white', font=('Arial', 12), width=10, height=2, command=f_exit)
+button_c = tk.Button(window, text='退出', bg='green', fg='white', font=(
+    'Arial', 12), width=10, height=2, command=f_exit)
 button_c.place(x=600, y=320)
 
 panel = tk.Label(window, width=500, height=350)  # 摄像头模块大小
@@ -409,7 +420,8 @@ def video_loop():  # 用于在label内动态展示摄像头内容（摄像头嵌
     if success:
         cv2.waitKey(1)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(int(W_size), int(H_size)))
+        faces = face_cascade.detectMultiScale(
+            gray, scaleFactor=1.2, minNeighbors=5, minSize=(int(W_size), int(H_size)))
         # 进行校验
         for (x, y, w, h) in faces:
             # global system_state_lock
