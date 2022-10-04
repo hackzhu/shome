@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>shome customize</title>
-  </head>
-  <body>
-    <form action="uploader" method="POST" enctype="multipart/form-data">
-      <input type="file" name="file" />
-      <input type="submit" value="提交" />
-    </form>
-  </body>
-</html>
+</head>
+<body>
+
+<form action="userhost" method="POST">
+    <textarea name="host">{% for n in userhost %}
+        {{ n }}
+    {% endfor %}</textarea>
+   <input type="submit" value="提交">
+</form>
+
+<form action="uploader" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file"/>
+    <input type="submit" value="提交"/>
+</form>
