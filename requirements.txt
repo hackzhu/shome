@@ -5,3 +5,4 @@ python-opencv
 pillow
 opencv-contrib-python
 flask
+IPy

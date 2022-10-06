@@ -4,5 +4,7 @@
   "vscode-home-assistant.longLivedAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI2ODJkYzA4MDZjNzQ0MDdlODRiZTA2MzcwYjVkMjA1YiIsImlhdCI6MTY2MjcxNzg1MywiZXhwIjoxOTc4MDc3ODUzfQ.-8dShDHcatGQQh79VGt7NqrwhhVV1HdpJ9fW_yipHMY",
   "files.associations": {
     "*.yaml": "home-assistant"
-  }
+  },
+  "code-runner.executorMap": {
+    "python": ".env/bin/python"
 }
