@@ -1,6 +1,4 @@
-
 import cv2
-import keyboard
 
 # 首先读取config文件，第一行代表当前已经储存的人名个数，接下来每一行是（id，name）标签和对应的人名
 id_dict = {}  # 字典里存的是id——name键值对
@@ -68,9 +66,6 @@ def scan_face():
                 else:
                     cur_poss = 0  # 表示不可以识别
 
-            if keyboard.is_pressed('q'):
-                break
-
             ave_poss += cur_poss
 
         if ave_poss >= 5:  # 有一半以上识别说明可行则返回
@@ -93,7 +88,4 @@ def f_scan_face_thread():
 
 
 while 1:
-    if keyboard.is_pressed('q'):
-        break
-    else:
-        f_scan_face_thread()
+    f_scan_face_thread()
