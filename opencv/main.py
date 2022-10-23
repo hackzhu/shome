@@ -6,7 +6,7 @@ Total_face_num = 999  # 已经被识别有用户名的人脸个数,
 
 
 def init():  # 将config文件内的信息读入到字典中
-    f = open('config.txt')
+    f = open('opencv/config.txt')
     global Total_face_num
     Total_face_num = int(f.readline())
 
@@ -20,7 +20,7 @@ def init():  # 将config文件内的信息读入到字典中
 init()
 
 # 加载OpenCV人脸检测分类器Haar
-face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+face_cascade = cv2.CascadeClassifier("opencv/haarcascade_frontalface_default.xml")
 
 # 准备好识别方法LBPH方法
 recognizer = cv2.face.LBPHFaceRecognizer_create()

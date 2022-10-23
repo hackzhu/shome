@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import os
@@ -54,7 +53,7 @@ def Get_new_face():
     print("正在从摄像头录入新人脸信息 \n")
 
     # 存在目录data就清空，不存在就创建，确保最后存在空的data目录
-    filepath = "data"
+    filepath = "opencv/data"
     if not os.path.exists(filepath):
         os.mkdir(filepath)
     else:
@@ -87,7 +86,7 @@ def Get_new_face():
             sample_num += 1
             # 保存图像，把灰度图片看成二维数组来检测人脸区域，这里是保存在data缓冲文件夹内
             T = Total_face_num
-            cv2.imwrite("./data/User." + str(T) + '.' +
+            cv2.imwrite("opencv/data/User." + str(T) + '.' +
                         str(sample_num) + '.jpg', gray[y:y + h, x:x + w])
 
         pictur_num = 1000  # 表示摄像头拍摄取样的数量,越多效果越好，但获取以及训练的越慢
@@ -109,7 +108,7 @@ def Get_new_face():
 def Train_new_face():
     print("\n正在训练")
     # cv2.destroyAllWindows()
-    path = 'data'
+    path = 'opencv/data'
 
     # 初始化识别的方法
     recog = recognizer

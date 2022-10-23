@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 upload/
+*data
 tmp
 test
 # C extensions
