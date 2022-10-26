@@ -55,14 +55,15 @@ void initmqtt()
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-    Serial.print("来自主题：");
-    Serial.println(topic);
-    Serial.print("内容:");
-    for (int i = 0; i < length; i++)
+    switch ((char)payload[0])
     {
-        Serial.print((char)payload[i]);
+    case '0':
+        Serial.println("i am 0");
+        break;
+    default:
+        break;
     }
-    Serial.println("");
+    Serial.println();
     Serial.println("------------------------------------");
 }
 
