@@ -49,7 +49,7 @@ def video_push():
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 @app.route('/')
@@ -81,9 +81,12 @@ def uploader():
 def hostip():
     hosts = request.form['host'].splitlines()
     userhost = []
+    ipfile = open(app.config['TMP_FOLDER'] + '/userhost', "w")
     for h in hosts:
         if checkip(h) == True:
             userhost.append(h)
+            ipfile.write(h+'\n')
+    ipfile.close()
     return userhost
 
 
