@@ -1,29 +1,31 @@
+#!/usr/bin/env python
+
 from flask import Flask, render_template, request, Response
-from werkzeug.utils import secure_filename
-# from camera import VideoCamera
-from pypinyin import lazy_pinyin
 
 import os
 import IPy
 import cv2
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'tmp/upload'
-app.config['TMP_FOLDER'] = 'tmp'
+app.config['TMP'] = 'tmp/'
 
-# 创建所需目录
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    if not os.path.exists(app.config['TMP_FOLDER']):
-        os.mkdir(app.config['TMP_FOLDER'])
-    os.mkdir(app.config['UPLOAD_FOLDER'])
-if not os.path.exists(app.config['TMP_FOLDER']+'/userhost'):
-    if not os.path.exists(app.config['TMP_FOLDER']):
-        os.mkdir(app.config['TMP_FOLDER'])
-    os.system('touch ' + app.config['TMP_FOLDER'] + '/userhost')
+# camera = cv2.VideoCapture('rtsp://localhost:8554/cam') # 网络摄像头
+
+try:
+    os.makedirs(app.config['TMP'] + 'faces/')
+except OSError as error:
+    pass
+try:
+    os.mknod(app.config['TMP'] + 'userip')
+except OSError as error:
+    pass
 
 
-# 检测ip合法性
-def checkip(address):
+with open(app.config['TMP'] + '/userip') as hi:
+    userip = hi.read().splitlines()
+
+
+def check_ip(address):
     try:
         version = IPy.IP(address).version()
         if version == 4 or version == 6:
@@ -36,13 +38,18 @@ def checkip(address):
 
 # 视频推流
 def video_push():
+    global camera
+    global hsize
+    global wsize
     camera = cv2.VideoCapture(0)
+    wsize = 0.1 * camera.get(3)
+    hsize = 0.1 * camera.get(4)
     while True:
-        success, frame = camera.read()  # read the camera frame
+        success, frame = camera.read()
         detector = cv2.CascadeClassifier(
-            'opencv/haarcascade_frontalface_default.xml')
+            'haarcascades/haarcascade_frontalface_default.xml')
         faces = detector.detectMultiScale(frame, 1.2, 6)
-        # Draw the rectangle around each face
+
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
 
@@ -54,41 +61,31 @@ def video_push():
 
 @app.route('/')
 def index():
-    with open(app.config['TMP_FOLDER']+'/userhost') as hf:
-        user_host = hf.read().splitlines()
     context = {
-        "userhost": user_host
+        "userip": userip
     }
     return render_template('index.html', **context)
 
 
+@app.route('/', methods=['POST'])
+def user_ip():
+    global userip
+    hostips = request.form['hostip'].splitlines()
+    hostips = list(set(hostips))  # 去重
+    useripfile = open(app.config['TMP'] + '/userip', "w")
+    userip.clear()
+    for h in hostips:
+        if check_ip(h) == True:
+            userip.append(h)
+            useripfile.write(h+'\n')
+    useripfile.close()
+    return index()
+
+
 @app.route('/video_pull')
 def video_pull():
-    return Response(video_push(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
-#! 中文转拼音上传
-@app.route('/uploader', methods=['POST'])
-def uploader():
-    f = request.files['file']
-    print(request.files)
-    f.save(os.path.join(
-        app.config['UPLOAD_FOLDER'], secure_filename(''.join(lazy_pinyin(f.filename)))))
-    return '上传成功'
-
-
-@app.route('/userhost', methods=['POST'])
-def hostip():
-    hosts = request.form['host'].splitlines()
-    userhost = []
-    ipfile = open(app.config['TMP_FOLDER'] + '/userhost', "w")
-    for h in hosts:
-        if checkip(h) == True:
-            userhost.append(h)
-            ipfile.write(h+'\n')
-    ipfile.close()
-    return userhost
-
+    return Response(video_push(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
