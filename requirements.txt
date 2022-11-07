@@ -6,4 +6,3 @@ pillow
 opencv-contrib-python
 flask
 IPy
-pypinyin

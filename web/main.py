@@ -38,12 +38,7 @@ def check_ip(address):
 
 # 视频推流
 def video_push():
-    global camera
-    global hsize
-    global wsize
     camera = cv2.VideoCapture(0)
-    wsize = 0.1 * camera.get(3)
-    hsize = 0.1 * camera.get(4)
     while True:
         success, frame = camera.read()
         detector = cv2.CascadeClassifier(

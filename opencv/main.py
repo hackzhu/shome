@@ -27,7 +27,7 @@ init()
 
 # 加载OpenCV人脸检测分类器Haar
 face_cascade = cv2.CascadeClassifier(
-    "opencv/haarcascade_frontalface_default.xml")
+    "haarcascades/haarcascade_frontalface_default.xml")
 
 # 准备好识别方法LBPH方法
 recognizer = cv2.face.LBPHFaceRecognizer_create()
@@ -153,7 +153,7 @@ def get_images_and_labels(path):
 
         # 调用熟悉的人脸分类器
         detector = cv2.CascadeClassifier(
-            'opencv/haarcascade_frontalface_default.xml')
+            'haarcascade/haarcascade_frontalface_default.xml')
 
         faces = detector.detectMultiScale(img_np)
 
