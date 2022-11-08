@@ -98,12 +98,16 @@ python:paho.mqtt
 
 #### opencv
 
+获取摄像头图像，显示色彩图像，检测用灰度图
+加载官方训练好的人脸分类器，使用LBPH方法
+
+
 ### 第四章 管理
 
 #### 前端管理
 
-python flask 框架
 hass 侧边仪表盘添加网页卡片（可以不用 supervisor）
+将私人配置和 opencv 的都基于 flask 开发
 
 #### 远程管理
 
