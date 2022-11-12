@@ -1,21 +1,25 @@
 import json
 import os
+import IPy
+
 
 import paho.mqtt.client as mqttclient
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
+facedir = os.path.join(tmpdir, 'face')
 configfile = os.path.join(tmpdir, 'config.json')
 mqtthost = "home.hackzhu.com"
 mqttport = 1883
+mqttid = 'c6774a3a08e85c2dc815bd9c4210d372'
 initdata = {
-    'userip': ['127.0.0.1', '::1', '123.456.789.0'],
+    'userip': ['127.0.0.1', '::1'],
     'athome': 0,
-    'temperature': '37℃',
+    'temperature': u'37℃',
     'humidity': '30%'
 }
 
 try:
-    os.mkdir(tmpdir)
+    os.makedirs(facedir)
 except OSError:
     pass
 try:
@@ -26,21 +30,43 @@ except OSError:
     pass
 
 
+def check_ip(ip):
+    try:
+        version = IPy.IP(ip).version()
+        if version == 4 or version == 6:
+            return True
+        else:
+            return False
+    except Exception:
+        return False
+
+
+def ping(ip):
+    version = IPy.IP(ip).version()
+    response = os.system("ping -c 1 -W 500 -" + str(version) + ' ' + ip + " >/dev/null 2>&1")
+    if response == 0:
+        return 1
+    return 0
+
+
 def config_read() -> dict:
     with open(configfile, 'r') as cf:
         data = json.load(cf)
     return data
 
 
-def config_write(data):
+def config_update(data):
     with open(configfile, 'w') as cf:
         json.dump(obj=data, fp=cf, indent=4)
-
-
-def mqtt_pub(payload="nothing", topic="config", qos=0):
     mclient = mqttclient.Client()
     mclient.connect(mqtthost, mqttport, 60)
-    payload=json.dumps(obj=payload)
+    payload = json.dumps(obj=data)
+    mclient.publish('homeassistant/config', payload, 0)
+
+
+def mqtt_pub(payload="nothing", topic="mqtt", qos=0):
+    mclient = mqttclient.Client(mqttid)
+    mclient.connect(mqtthost, mqttport, 60)
     mclient.publish('homeassistant/' + topic, payload, qos)
 
 

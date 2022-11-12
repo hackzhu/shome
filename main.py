@@ -1,64 +1,17 @@
 #!/usr/bin/env python
 
 from flask import Flask, render_template, request, Response
-from pathlib import Path
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
 
-import paho.mqtt.client as mqttclient
-
 import os
-import IPy
 import cv2
-import json
 import init
 
 app = Flask(__name__)
 
-tmpdir = os.path.join(os.getcwd(), 'tmp')
-facedir = os.path.join(tmpdir, 'face')
-useripfile = os.path.join(tmpdir, 'userip')
-athomefile = os.path.join(tmpdir, 'athome')
-mqtthost = "home.hackzhu.com"
-mqttport = 1883
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
-
-try:
-    os.makedirs(facedir)
-except OSError:
-    pass
-try:
-    os.mkdir(tmpdir)
-except OSError:
-    pass
-try:
-    os.mknod(useripfile)
-except OSError:
-    pass
-try:
-    os.mknod(athomefile)
-    with open(athomefile, 'w') as ah:
-        ah.write('0')
-except OSError:
-    pass
-
-with open(useripfile, 'r') as ui:
-    userip = ui.read().splitlines()
-with open(athomefile, 'r') as ui:
-    athome = ui.read()
-
 config = init.config_read()
-
-
-def check_ip(address):
-    try:
-        version = IPy.IP(address).version()
-        if version == 4 or version == 6:
-            return True
-        else:
-            return False
-    except Exception as e:
-        return False
 
 
 # 视频推流
@@ -97,8 +50,7 @@ def video_push():
 #             config['athome'] = '1'
 #         else:
 #             config['athome'] = '1'
-#     init.mqtt_pub(config)
-#     init.config_write(config)
+#     init.config_update(config)
 #     return None
 
 
@@ -118,10 +70,9 @@ def user_ip():
     userips = list(set(userips))  # 去重但乱
     config['userip'].clear()
     for h in userips:
-        if check_ip(h) == True:
+        if init.check_ip(h) == True:
             config['userip'].append(h)
-    init.mqtt_pub(config)
-    init.config_write(config)
+    init.config_update(config)
     return index()
 
 
@@ -134,7 +85,7 @@ def face_upload():
     f = request.files['file']
     print(request.files)
     f.save(os.path.join(
-        facedir, secure_filename(''.join(lazy_pinyin(f.filename)))))
+        init.facedir, secure_filename(''.join(lazy_pinyin(f.filename)))))
     return index()
 
 
