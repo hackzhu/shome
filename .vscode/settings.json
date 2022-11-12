@@ -1,0 +1,8 @@
+{
+  "code-runner.executorMap": {
+    "python": "/usr/bin/env python"
+},
+"files.associations": {
+    "*.yaml": "home-assistant"
+}
+}

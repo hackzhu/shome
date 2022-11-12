@@ -1,0 +1,23 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+sensor:
+  - platform: mqtt
+    state_topic: 'homeassistant/temperature'
+    name: '温度'
+    unique_id: 'temperature'
+  - platform: mqtt
+    state_topic: 'homeassistant/humidity'
+    name: '湿度'
+    unique_id: 'humidity'
+  - platform: command_line
+    command: 'ddnspod.sh'
+    scan_interval: '86400'
