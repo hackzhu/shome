@@ -10,6 +10,8 @@ import paho.mqtt.client as mqttclient
 import os
 import IPy
 import cv2
+import json
+import init
 
 app = Flask(__name__)
 
@@ -26,13 +28,13 @@ try:
 except OSError:
     pass
 try:
-    os.mknod(useripfile)
+    os.mkdir(tmpdir)
 except OSError:
     pass
 try:
     os.mknod(useripfile)
 except OSError:
-    print()
+    pass
 try:
     os.mknod(athomefile)
     with open(athomefile, 'w') as ah:
@@ -45,6 +47,8 @@ with open(useripfile, 'r') as ui:
 with open(athomefile, 'r') as ui:
     athome = ui.read()
 
+config = init.config_read()
+
 
 def check_ip(address):
     try:
@@ -55,12 +59,6 @@ def check_ip(address):
             return False
     except Exception as e:
         return False
-
-
-def mqtt_pub(payload="payload", topic="mqtt", qos=0):
-    mclient = mqttclient.Client()
-    mclient.connect(mqtthost, mqttport, 60)
-    mclient.publish('homeassistant/' + topic, payload, qos)
 
 
 # 视频推流
@@ -85,51 +83,49 @@ def video_push():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-@app.before_request
-def at_home():
-    global athome
-    for ui in userip:
-        ping = os.system("ping -c 1 -W 500 " + ui + " >/dev/null 2>&1")
-        if ping == 0:
-            break
-        else:
-            ping = 1
-    with open(athomefile, 'w', encoding='utf8') as ah:
-        if ping == 0:
-            mqtt_pub('1', "athome", 0)
-            athome = '1'
-            ah.write('1')
-        else:
-            mqtt_pub('0', "athome", 0)
-            athome = '0'
-            ah.write('0')
-    return None
+# @app.before_request
+# def at_home():
+#     global config
+#     for ui in config['userip']:
+#         ping = os.system("ping -c 1 -W 500 " + ui + " >/dev/null 2>&1")
+#         if ping == 0:
+#             break
+#         else:
+#             ping = 1
+#     with open(init.configfile, 'w', encoding='utf8') as ah:
+#         if ping == 0:
+#             config['athome'] = '1'
+#         else:
+#             config['athome'] = '1'
+#     init.mqtt_pub(config)
+#     init.config_write(config)
+#     return None
 
 
 @app.route('/')
 def index():
     context = {
-        "userip": userip,
-        "athome": athome
+        "userip": config['userip'],
+        "athome": config['athome']
     }
     return render_template('index.html', **context)
 
 
 @app.route('/userip_update', methods=['POST'])
 def user_ip():
-    global userip
+    global config
     userips = request.form['userips'].splitlines()
-    userips = list(set(userips))  # 去重
-    userip.clear()
-    with open(useripfile, 'w', encoding='utf8') as ui:
-        for h in userips:
-            if check_ip(h) == True:
-                userip.append(h)
-                ui.write(h+'\n')
+    userips = list(set(userips))  # 去重但乱
+    config['userip'].clear()
+    for h in userips:
+        if check_ip(h) == True:
+            config['userip'].append(h)
+    init.mqtt_pub(config)
+    init.config_write(config)
     return index()
 
 
-#BUG 中文无法安全上传
+# BUG 中文无法安全上传
 # 现使用中文转拼音上传
 # 后续可能从secure_filename源码处修改
 # opencv putText的中文问题该解决
