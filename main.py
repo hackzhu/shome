@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, Response
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
+from xiaoai import *
 
 import os
 import cv2
@@ -36,22 +37,23 @@ def video_push():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-# @app.before_request
-# def at_home():
-#     global config
-#     for ui in config['userip']:
-#         ping = os.system("ping -c 1 -W 500 " + ui + " >/dev/null 2>&1")
-#         if ping == 0:
-#             break
-#         else:
-#             ping = 1
-#     with open(init.configfile, 'w', encoding='utf8') as ah:
-#         if ping == 0:
-#             config['athome'] = '1'
-#         else:
-#             config['athome'] = '1'
-#     init.config_update(config)
-#     return None
+def xiaoai_output(toSpeakText, is_session_end, openMic=True):
+    xiaoAIResponse = XiaoAIResponse(to_speak=XiaoAIToSpeak(
+        type_=0, text=toSpeakText), open_mic=openMic)
+    response = xiaoai_response(XiaoAIOpenResponse(version="1.0",
+                                                  is_session_end=is_session_end,
+                                                  response=xiaoAIResponse))
+    return response
+
+
+def xiaoai_input(event):
+    req = xiaoai_request(event)
+    if req.request.type == 0:
+        return '0'
+    elif req.requests.type == 1:
+        return '1'
+    else:
+        return '2'
 
 
 @app.route('/')
@@ -61,6 +63,12 @@ def index():
         "athome": config['athome']
     }
     return render_template('index.html', **context)
+
+
+@app.route('/xiaoai', methods=['POST'])
+def xiaoai():
+    response = xiaoai_input(request.json)
+    return response
 
 
 @app.route('/userip_update', methods=['POST'])
@@ -96,4 +104,5 @@ def video_pull():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=(
+        'ssl_certs/home.hackzhu.com_bundle.pem', 'ssl_certs/home.hackzhu.com.key'))

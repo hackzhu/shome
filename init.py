@@ -2,7 +2,6 @@ import json
 import os
 import IPy
 
-
 import paho.mqtt.client as mqttclient
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
@@ -30,7 +29,7 @@ except OSError:
     pass
 
 
-def check_ip(ip):
+def check_ip(ip) -> bool:
     try:
         version = IPy.IP(ip).version()
         if version == 4 or version == 6:
@@ -41,12 +40,13 @@ def check_ip(ip):
         return False
 
 
-def ping(ip):
+def ping(ip) -> bool:
     version = IPy.IP(ip).version()
-    response = os.system("ping -c 1 -W 500 -" + str(version) + ' ' + ip + " >/dev/null 2>&1")
+    response = os.system("ping -c 1 -W 500 -" +
+                         str(version) + ' ' + ip + " >/dev/null 2>&1")
     if response == 0:
-        return 1
-    return 0
+        return True
+    return False
 
 
 def config_read() -> dict:
@@ -55,7 +55,7 @@ def config_read() -> dict:
     return data
 
 
-def config_update(data):
+def config_update(data) -> None:
     with open(configfile, 'w') as cf:
         json.dump(obj=data, fp=cf, indent=4)
     mclient = mqttclient.Client()
@@ -64,13 +64,13 @@ def config_update(data):
     mclient.publish('homeassistant/config', payload, 0)
 
 
-def mqtt_pub(payload="nothing", topic="mqtt", qos=0):
+def mqtt_pub(payload="nothing", topic="mqtt", qos=0) -> None:
     mclient = mqttclient.Client(mqttid)
     mclient.connect(mqtthost, mqttport, 60)
     mclient.publish('homeassistant/' + topic, payload, qos)
 
 
-def mqtt_msg(client, userdata, msg):
+def mqtt_msg(client, userdata, msg) -> None:
     mpayload = str(msg.payload)[2:-1]
     match mpayload:
         case '1':
@@ -79,7 +79,7 @@ def mqtt_msg(client, userdata, msg):
             print('this is 2')
 
 
-def mqtt_sub(topic):
+def mqtt_sub(topic) -> None:
     mqttclient.connect(mqtthost, mqttport, 60)
     mqttclient.loop_start()
     mqttclient.subscribe('homeassistant/' + topic)
