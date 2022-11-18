@@ -1,4 +1,4 @@
-#/usr/bin/bash
+#!/usr/bin/bash
 
 #new_ip="2001:0250:3401:6000:0000:0000:30c6:ceb7"
 new_ip=$(ip -6 a|grep inet6|grep -v ::1|grep -v fe80|cut -d "/" -f1|awk '{print $2}'|head -n 1)

@@ -8,6 +8,7 @@ from xiaoai import *
 import os
 import cv2
 import init
+import requests
 
 app = Flask(__name__)
 
@@ -78,7 +79,7 @@ def user_ip():
     userips = list(set(userips))  # 去重但乱
     config['userip'].clear()
     for h in userips:
-        if init.check_ip(h) == True:
+        if init.check_ip(h) is True:
             config['userip'].append(h)
     init.config_update(config)
     return index()
@@ -102,7 +103,46 @@ def video_pull():
     return Response(video_push(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# BUG 无法使用摄像头
+@app.route('/ddns', methods=['POST'])
+def ddnspod():
+    global config
+    newip = r"2001:0250:3401:6000:0000:0000:30c6:ceb7"
+    token = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
+    subdomain = "home"
+    domain = "hackzhu.com"
+    recordtype = "AAAA"
+    listurl = r"https://dnsapi.cn/Record.List"
+    ddnsurl = r"https://dnsapi.cn/Record.Ddns"
+    headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
+    data = {
+        'login_token': token,
+        'format': 'json',
+        'domain': domain,
+        'sub_domain': subdomain
+    }
+    list = requests.post(url=listurl, headers=headers, data=data).text
+    lists = json.loads(list)
+    recordid = lists['records'][0]['id']
+    oldip = lists['records'][0]['value']
+    if newip != oldip:
+        ddnsdata = {
+            'login_token': token,
+            'format': 'json',
+            'domain': domain,
+            'sub_domain': subdomain,
+            'record_id': recordid,
+            'record_type': recordtype,
+            'value': newip,
+            'record_line_id': '0'
+        }
+        requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
+        config['ip'] = newip
+        init.config_update(config)
+    return index()
+
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=(
+    print('https://home.hackzhu.com:8443')
+    app.run(host='0.0.0.0', port=8443, debug=True, ssl_context=(
         'ssl_certs/home.hackzhu.com_bundle.pem', 'ssl_certs/home.hackzhu.com.key'))

@@ -13,6 +13,7 @@ mqttid = 'c6774a3a08e85c2dc815bd9c4210d372'
 initdata = {
     'userip': ['127.0.0.1', '::1'],
     'athome': 0,
+    'ip': '2001:0250:3401:6000:0000:0000:30c6:ceb7',
     'temperature': u'37℃',
     'humidity': '30%'
 }
