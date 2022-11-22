@@ -3,6 +3,7 @@ import os
 import IPy
 
 import paho.mqtt.client as mqttclient
+import paho.mqtt.publish as mqttpublish
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
 facedir = os.path.join(tmpdir, 'face')
@@ -10,12 +11,14 @@ configfile = os.path.join(tmpdir, 'config.json')
 mqtthost = "home.hackzhu.com"
 mqttport = 1883
 mqttid = 'c6774a3a08e85c2dc815bd9c4210d372'
+configtopic = 'homeassistant/config'
 initdata = {
     'userip': ['127.0.0.1', '::1'],
     'athome': 0,
-    'ip': '2001:0250:3401:6000:0000:0000:30c6:ceb7',
-    'temperature': u'37℃',
-    'humidity': '30%'
+    'hostip': '2001:0250:3401:6000:0000:0000:30c6:ceb7',
+    'esp': 0,
+    'curtain': 0,
+    'light': 0
 }
 
 try:
@@ -59,10 +62,9 @@ def config_read() -> dict:
 def config_update(data) -> None:
     with open(configfile, 'w') as cf:
         json.dump(obj=data, fp=cf, indent=4)
-    mclient = mqttclient.Client()
-    mclient.connect(mqtthost, mqttport, 60)
     payload = json.dumps(obj=data)
-    mclient.publish('homeassistant/config', payload, 0)
+    mqttpublish.single(configtopic, payload, qos=0,
+                       hostname=mqtthost, port=mqttport)
 
 
 def mqtt_pub(payload="nothing", topic="mqtt", qos=0) -> None:

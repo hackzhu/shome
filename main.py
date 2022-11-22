@@ -74,7 +74,6 @@ def xiaoai():
 
 @app.route('/userip_update', methods=['POST'])
 def user_ip():
-    global config
     userips = request.form['userips'].splitlines()
     userips = list(set(userips))  # 去重但乱
     config['userip'].clear()
@@ -106,7 +105,6 @@ def video_pull():
 # BUG 无法使用摄像头
 @app.route('/ddns', methods=['POST'])
 def ddnspod():
-    global config
     newip = r"2001:0250:3401:6000:0000:0000:30c6:ceb7"
     token = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
     subdomain = "home"
