@@ -1,1 +1,1 @@
-# this is a boot file
+# This is boot file of micropython

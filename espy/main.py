@@ -1,72 +1,78 @@
 import gc
 import time
-from umqttsimple import MQTTClient
 import ubinascii
 import machine
 import micropython
-import network
-import esp
 import json
-esp.osdebug(None)
 gc.collect()
 
 ssid = 'wifiboxs-2.4G'
 password = 'gxdx28b312'
-mqtt_server = 'home.hackzhu.com'
+mqtthost = b'home.hackzhu.com'
+mqttport = 1883
 client_id = ubinascii.hexlify(machine.unique_id())
 topic_sub = b'homeassistant/config'
 topic_pub = b'hello'
 
-last_message = 0
-message_interval = 5
-counter = 0
+ledpin = machine.Pin(2, machine.Pin.OUT)
 
-station = network.WLAN(network.STA_IF)
+def wifi_connect():
+    import network
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(ssid, password)
+    while not wlan.isconnected():
+        led_blink()
 
-station.active(True)
-station.connect(ssid, password)
-
-while station.isconnected() == False:
-    pass
-
-print('WiFi connection successful')
-
-
-def mqtt_callback(topic, msg):
-    client.publish(topic_pub, msg)
-    configjson = json.loads(msg)
-    for key, value in configjson.items():
-        print(key, value, '\n')
-
-
-def mqtt_subscribe():
-    client = MQTTClient(client_id, mqtt_server)
-    client.set_callback(mqtt_callback)
-    client.connect()
-    client.subscribe(topic_sub)
-    print('Connected to %s MQTT broker, subscribed to %s topic' %
-          (mqtt_server, topic_sub))
-    return client
+def led_blink():
+    global ledpin
+    ledpin.on()
+    time.sleep(0.5)
+    ledpin.off()
+    time.sleep(0.5)
 
 
 def restart():
-    print('Failed to connect to MQTT broker. Reconnecting...')
-    time.sleep(10)
+    led_blink()
+    led_blink()
+    led_blink()
     machine.reset()
 
 
-try:
-    client = mqtt_subscribe()
-except OSError as e:
-    restart()
+def mqtt_callback(topic, msg):
+    configjson = json.loads(msg)
+    for key, value in configjson.items():
+        led_blink()
 
-while True:
+def mqtt_connect():
+    from umqtt.simple import MQTTClient
+    client = MQTTClient(client_id, mqtthost, mqttport)
+    client.set_callback(mqtt_callback)
     try:
-        client.check_msg()
-        if (time.time() - last_message) > message_interval:
-            msg = b'Hello #%d' % counter
-            client.publish(topic_pub, msg)
-            last_message = time.time()
-            counter += 1
+        client.connect()
+        client.publish(topic_pub, 'online')
+        client.subscribe(topic_sub)
     except OSError:
+        ledpin.on()
         restart()
+    return client
+
+# TODO 按键去抖动
+def light_interupt(pin):
+    led_blink()
+
+def main():
+    wifi_connect()
+    mqttclient = mqtt_connect()
+    lightpin = machine.Pin(13, machine.Pin.IN)
+    lightpin.irq(trigger=machine.Pin.IRQ_RISING, handler=light_interupt)
+    while True:
+        try:
+            mqttclient.check_msg()
+        except OSError:
+            restart()
+        pass
+
+
+if __name__ == '__main__':
+    main()
