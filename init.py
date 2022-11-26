@@ -73,7 +73,7 @@ def mqtt_pub(payload="nothing", topic="mqtt", qos=0) -> None:
     mclient.publish('homeassistant/' + topic, payload, qos)
 
 
-def mqtt_msg(client, userdata, msg) -> None:
+def mqtt_callback(client, userdata, msg) -> None:
     mpayload = str(msg.payload)[2:-1]
     match mpayload:
         case '1':
@@ -86,4 +86,4 @@ def mqtt_sub(topic) -> None:
     mqttclient.connect(mqtthost, mqttport, 60)
     mqttclient.loop_start()
     mqttclient.subscribe('homeassistant/' + topic)
-    mqttclient.on_message = mqtt_msg  # 用于回调
+    mqttclient.on_message = mqtt_callback()  # 用于回调

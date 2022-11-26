@@ -139,7 +139,7 @@ def ddnspod():
         init.config_update(config)
     return index()
 
-
+# TODO 改换nginx
 if __name__ == '__main__':
     print('https://home.hackzhu.com:8443')
     app.run(host='0.0.0.0', port=8443, debug=True, ssl_context=(
