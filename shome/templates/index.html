@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <title>shome customize</title>
+  </head>
+  <body>
+    <form action="/userip_update" method="POST">
+      <!-- 这里需要注意缩进 -->
+      <textarea name="userips">
+{% for n in userip %}{{ n }}
+{% endfor %}</textarea
+      >
+      <!-- 这里需要注意缩进 -->
+      <input type="submit" value="更新" />
+    </form>
+    <br />
+    <form action="/ddns" method="POST">
+      <input type="submit" value="DDNS" />
+    </form>
+    <br />
+    <form action="/face_upload" method="POST" enctype="multipart/form-data">
+      <input type="file" name="file" />
+      <input type="submit" value="提交" />
+    </form>
+    <br />
+    {% if athome == '1' %}
+    <p>居家</p>
+    {% else %}
+    <p>{{ athome }}</p>
+    {% endif %}
+    <br />
+    <img src="{{ url_for('video_pull') }}" />
+  </body>
+</html>

@@ -1,0 +1,8 @@
+RPi.GPIO
+paho.mqtt
+python-opencv
+pillow
+opencv-contrib-python
+flask
+IPy
+pypinyin
