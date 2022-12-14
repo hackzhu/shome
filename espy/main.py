@@ -56,11 +56,20 @@ def dht11() -> None:
     return d
 
 
-def mqtt_callback(topic, msg) -> None:
-    configjson = json.loads(msg)
-    for key, value in configjson.items():
-        led_blink()
-
+def mqtt_callback(topic, payload) -> None:
+    configjson = json.loads(payload)
+    if configjson['light'] == 'on':
+        pass
+        # light_on
+    else:
+        pass
+        # light_off
+    if configjson['motion'] == 'on':
+        pass
+        # motion_on
+    else:
+        pass
+        # motion_off
 
 def mqtt_connect() -> None:
     from umqtt.simple import MQTTClient
@@ -139,8 +148,8 @@ def main():
                     dhtjson = json.dumps(dhtstatus)
                     mqttclient.publish(pubtpoic, dhtjson)
                     time.sleep(5)
-        except OSError:
-            debug_output('looped')
+        except Exception as e:
+            debug_output('looped for ' + e)
             restart()
 
 
