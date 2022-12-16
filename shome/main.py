@@ -3,17 +3,43 @@
 import os
 import cv2
 import init
+import json
 import requests
 
 from flask import Flask, render_template, request, Response
+from flask_mqtt import Mqtt
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
 # from xiaoai import *  # 小爱同学不支持IPv6
 
 app = Flask(__name__)
-
+# app.config['MQTT_CLIENT_ID'] = '' #默认随机
+app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
+app.config['MQTT_BROKER_PORT'] = 1883
+app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
+app.config['MQTT_PASSWORD'] = ''  # 当你需要验证用户名和密码时，请设置该项
+app.config['MQTT_KEEPALIVE'] = 5  # 设置心跳时间，单位为秒
+app.config['MQTT_TLS_ENABLED'] = False  # 如果你的服务器支持 TLS，请设置为 True
+mqtttopic = 'flask/mqtt'
+mqttclient = Mqtt(app)
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
 config = init.config_read()
+
+
+@mqttclient.on_connect()
+def handle_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print('Connected successfully')  # BUG 无输出，可能是多线程的问题
+        mqttclient.publish(topic='flask', payload='online')
+        mqttclient.subscribe(mqtttopic)
+    else:
+        print('Bad connection. Code:', rc)
+
+
+@mqttclient.on_message()
+def handle_mqtt_message(client, userdata, message):
+    payload = message.payload.decode()
+    print(payload)
 
 
 # 视频推流
@@ -75,7 +101,7 @@ def index():
 @app.route('/userip_update', methods=['POST'])
 def user_ip():
     userips = request.form['userips'].splitlines()
-    userips = list(set(userips))  # 去重但乱
+    userips = list(set(userips))  # 去重但顺序乱
     config['userip'].clear()
     for h in userips:
         if init.check_ip(h) is True:
@@ -101,6 +127,7 @@ def face_upload():
 def video_pull():
     return Response(video_push(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 # BUG 无法使用摄像头
 # TODO 自动获取ip
@@ -140,11 +167,13 @@ def ddnspod():
         init.config_update(config)
     return index()
 
+
 # TODO 改换nginx
 def main():
     print('https://home.hackzhu.com:8443')
-    app.run(host='0.0.0.0', port=8443, debug=True, ssl_context=(
+    app.run(host='0.0.0.0', port=8443, debug=False, ssl_context=(
         'nginx/ssl_certs/home.hackzhu.com_bundle.pem', 'nginx/ssl_certs/home.hackzhu.com.key'))
+
 
 if __name__ == '__main__':
     main()

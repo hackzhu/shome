@@ -6,3 +6,5 @@ opencv-contrib-python
 flask
 IPy
 pypinyin
+flask-mqtt
+requests
