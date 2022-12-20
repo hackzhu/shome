@@ -4,7 +4,6 @@ import os
 import cv2
 import init
 import json
-import requests
 
 from flask import Flask, render_template, request, Response
 from flask_mqtt import Mqtt
@@ -39,7 +38,19 @@ def handle_connect(client, userdata, flags, rc):
 @mqttclient.on_message()
 def handle_mqtt_message(client, userdata, message):
     payload = message.payload.decode()
-    print(payload)
+    topic = message.topic
+    if payload == 'online':
+        config['device'][topic.split(r'/', 1)[1]] = 1
+        init.config_update(config)
+        return None
+    elif payload == 'offline':
+        config[topic.split(r'/', 1)[1]] = 0
+        init.config_update(config)
+        return None
+    payloadjson = json.loads(payload)
+    if payloadjson['test'] == 'testext':
+        print('test successfully')
+        return None
 
 
 # 视频推流
@@ -48,7 +59,7 @@ def video_push():
     while True:
         success, frame = camera.read()
         detector = cv2.CascadeClassifier(
-            'haarcascades/haarcascade_frontalface_default.xml')
+            'haarcascades/haarcascade_lowerbody.xml')
         faces = detector.detectMultiScale(frame, 1.2, 6)
 
         for (x, y, w, h) in faces:
@@ -86,8 +97,9 @@ def video_push():
 @app.route('/')
 def index():
     context = {
-        "userip": config['userip'],
-        "athome": config['athome']
+        "userip": config.get('userip'),
+        "athome": config.get('athome'),
+        "ddnsip": config.get('ddnsip')
     }
     return render_template('index.html', **context)
 
@@ -132,47 +144,21 @@ def video_pull():
 # BUG 无法使用摄像头
 # TODO 自动获取ip
 @app.route('/ddns', methods=['POST'])
-def ddnspod():
-    newip = r"2001:0250:3401:6000:0000:0000:30c6:ceb7"
-    token = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
-    subdomain = "home"
-    domain = "hackzhu.com"
-    recordtype = "AAAA"
-    listurl = r"https://dnsapi.cn/Record.List"
-    ddnsurl = r"https://dnsapi.cn/Record.Ddns"
-    headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
-    data = {
-        'login_token': token,
-        'format': 'json',
-        'domain': domain,
-        'sub_domain': subdomain
-    }
-    list = requests.post(url=listurl, headers=headers, data=data).text
-    lists = json.loads(list)
-    recordid = lists['records'][0]['id']
-    oldip = lists['records'][0]['value']
-    if newip != oldip:
-        ddnsdata = {
-            'login_token': token,
-            'format': 'json',
-            'domain': domain,
-            'sub_domain': subdomain,
-            'record_id': recordid,
-            'record_type': recordtype,
-            'value': newip,
-            'record_line_id': '0'
-        }
-        requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
-        config['ip'] = newip
+def ddns():
+    ip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
+    ddnsreturn = init.ddns(ip)
+    if ddnsreturn == 0 or config['ddnsip'] != ip:
+        config['ddnsip'] = ip
         init.config_update(config)
     return index()
 
 
 # TODO 改换nginx
 def main():
-    print('https://home.hackzhu.com:8443')
-    app.run(host='0.0.0.0', port=8443, debug=False, ssl_context=(
-        'nginx/ssl_certs/home.hackzhu.com_bundle.pem', 'nginx/ssl_certs/home.hackzhu.com.key'))
+    # print('https://home.hackzhu.com:8443')
+    # app.run(host='0.0.0.0', port=8443, debug=False, ssl_context=(
+    # 'nginx/ssl_certs/home.hackzhu.com_bundle.pem', 'nginx/ssl_certs/home.hackzhu.com.key'))
+    app.run(host='0.0.0.0', port=8443, debug=True)
 
 
 if __name__ == '__main__':
