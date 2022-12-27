@@ -9,7 +9,7 @@ tmpdir = os.path.join(os.getcwd(), 'tmp')
 configfile = os.path.join(tmpdir, 'config.json')
 mqttbroker = r"home.hackzhu.com"
 mqttport = 1883
-configtopic = r'shome/config'
+configtopic = r'etc/config'
 ddnsdomain = r'home.hackzhu.com'
 ddnstoken = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
 
@@ -26,7 +26,7 @@ try:
         'device':{
                 'esp0': 0,
                 'esp1': 0
-                #搞自增？
+                #可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
         },
         'test': 'testext'
     }
