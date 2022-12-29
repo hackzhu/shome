@@ -38,6 +38,7 @@ def handle_connect(client, userdata, flags, rc) -> None:
 @mqttclient.on_message()
 def handle_mqtt_message(client, userdata, message) -> None:
     try:
+        # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
         payload = message.payload.decode()
         topic = message.topic
         if payload == 'online':
@@ -50,6 +51,10 @@ def handle_mqtt_message(client, userdata, message) -> None:
             return None
         elif payload == 'delete':
             del config['device'][topic.split(r'/', 1)[1]]
+            init.config_update(config)
+            return None
+        elif payload == 'test':
+            print(topic+':test')
             return None
         payloadjson = json.loads(payload)
         if payloadjson['test'] == 'testext':
@@ -59,7 +64,7 @@ def handle_mqtt_message(client, userdata, message) -> None:
     except KeyError:
         print('Key Error')
         return None
-    except Exception:
+    except:
         pass
 
 
@@ -82,9 +87,10 @@ def video_push():
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         else:
             pass
+
 
 '''
 def xiaoai_output(toSpeakText, is_session_end, openMic=True):
@@ -106,6 +112,7 @@ def xiaoai_input(event):
         return '2'
 '''
 
+
 @app.route('/')
 def index():
     context = {
@@ -116,12 +123,14 @@ def index():
     }
     return render_template('index.html', **context)
 
+
 '''
 @app.route('/xiaoai', methods=['POST'])
 def xiaoai():
     response = xiaoai_input(request.json)
     return response
 '''
+
 
 @app.route('/userip_update', methods=['POST'])
 def user_ip():
@@ -135,6 +144,18 @@ def user_ip():
     return index()
 
 
+# TODO 自动获取ip
+@app.route('/ddns', methods=['POST'])
+def ddns():
+    ddnsip = request.form['ddnsips']
+    # ddnsip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
+    ddnsreturn = init.ddnspod(ddnsip)
+    if ddnsreturn == 1 or config['ddnsip'] != ddnsip:
+        config['ddnsip'] = ddnsip
+        init.config_update(config)
+    return index()
+
+
 # BUG 中文无法安全上传
 # 现使用中文转拼音上传
 # 后续可能从secure_filename源码处修改
@@ -144,7 +165,7 @@ def face_upload():
     f = request.files['file']
     print(request.files)
     f.save(os.path.join(
-        init.facedir, secure_filename(''.join(lazy_pinyin(f.filename)))))
+        init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
     return index()
 
 
@@ -154,24 +175,12 @@ def video_pull():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-# BUG 无法使用摄像头
-# TODO 自动获取ip
-@app.route('/ddns', methods=['POST'])
-def ddns():
-    ip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
-    ddnsreturn = init.ddns(ip)
-    if ddnsreturn == 0 or config['ddnsip'] != ip:
-        config['ddnsip'] = ip
-        init.config_update(config)
-    return index()
-
-
 # TODO 改换nginx
 def main():
     # print('https://home.hackzhu.com:8443')
     # app.run(host='0.0.0.0', port=8443, debug=False, ssl_context=(
     # 'nginx/ssl_certs/home.hackzhu.com_bundle.pem', 'nginx/ssl_certs/home.hackzhu.com.key'))
-    app.run(host='0.0.0.0', port=8443, debug=True)
+    app.run(host='0.0.0.0', port=8443, debug=False)  # debug=True时，mqtt会回调两次
 
 
 if __name__ == '__main__':

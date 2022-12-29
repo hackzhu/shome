@@ -148,8 +148,8 @@ def main():
                     dhtjson = json.dumps(dhtstatus)
                     mqttclient.publish(pubtpoic, dhtjson)
                     time.sleep(5)
-        except Exception as e:
-            debug_output('looped for ' + e)
+        except:
+            debug_output('looped')
             restart()
 
 

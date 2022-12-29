@@ -70,6 +70,19 @@ def config_update(data) -> None:
                        hostname=mqttbroker, port=mqttport)
 
 
+def at_home():
+    config = config_read()
+    for ui in config['userip']:
+        pingstatus = ping(ui)
+        if pingstatus is True:
+            config['athome'] = 1
+            break
+        else:
+            config['athome'] = 0
+    config_update(config)
+    return config['athome']
+
+
 def ddnspod(ip=None) -> int:
     if ip != None:
         subdomain, domain = ddnsdomain.split('.', 1)
@@ -88,9 +101,9 @@ def ddnspod(ip=None) -> int:
             'sub_domain': subdomain
         }
         list = requests.post(url=listurl, headers=headers, data=data).text
-        lists = json.loads(list)
-        recordid = lists['records'][0]['id']
-        oldip = lists['records'][0]['value']
+        list = json.loads(list)
+        recordid = list['records'][0]['id']
+        oldip = list['records'][0]['value']
         if ip != oldip:
             ddnsdata = {
                 'login_token': ddnstoken,
