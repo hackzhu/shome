@@ -23,10 +23,10 @@ try:
         'userip': ['127.0.0.1', '::1'],
         'athome': 0,
         'ddnsip': r'2001:0250:3401:6000:0000:0000:30c6:ceb7',
-        'device':{
-                'esp0': 0,
-                'esp1': 0
-                #可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
+        'device': {
+            'esp0': 0,
+            'esp1': 0
+            # 可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
         },
         'test': 'testext'
     }
@@ -62,14 +62,29 @@ def config_read() -> dict:
     return data
 
 
+def config_check(data) -> bool:
+    try:
+        if isinstance(data, dict) is False:
+            return False
+        if isinstance(data['device'], dict) is False:
+            return False
+        return True
+    except:
+        return False
+
+
 def config_update(data) -> None:
-    with open(configfile, 'w') as cf:
-        json.dump(obj=data, fp=cf, indent=4)
-    payload = json.dumps(obj=data)
-    mqttpublish.single(configtopic, payload, qos=0, retain=True,
-                       hostname=mqttbroker, port=mqttport)
+    if config_check(data):
+        with open(configfile, 'w') as cf:
+            json.dump(obj=data, fp=cf, indent=4)
+        payload = json.dumps(obj=data)
+        mqttpublish.single(configtopic, payload, qos=0, retain=True,
+                           hostname=mqttbroker, port=mqttport)
+    else:
+        print('config update undone')
 
 
+# TODO 寻找更适合的方法
 def at_home():
     config = config_read()
     for ui in config['userip']:

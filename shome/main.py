@@ -26,17 +26,17 @@ config = init.config_read()
 
 
 @mqttclient.on_connect()
-def handle_connect(client, userdata, flags, rc) -> None:
+def mqtt_connect(client, userdata, flags, rc) -> None:
     if rc == 0:
         print('Connected successfully')  # BUG 无输出，可能是多线程的问题
-        mqttclient.publish(topic='flask', payload='online')
+        mqttclient.publish(topic=init.configtopic, payload='online')
         mqttclient.subscribe(mqtttopic)
     else:
         print('Bad connection. Code:', rc)
 
 
 @mqttclient.on_message()
-def handle_mqtt_message(client, userdata, message) -> None:
+def mqtt_callback(client, userdata, message) -> None:
     try:
         # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
         payload = message.payload.decode()
@@ -65,7 +65,8 @@ def handle_mqtt_message(client, userdata, message) -> None:
         print('Key Error')
         return None
     except:
-        pass
+        print('Other Error')
+        return None
 
 
 # 视频推流
@@ -132,41 +133,81 @@ def xiaoai():
 '''
 
 
-@app.route('/userip_update', methods=['POST'])
+@app.route('/userip_update', methods=['POST', 'GET'])
 def user_ip():
-    userips = request.form['userips'].splitlines()
-    userips = list(set(userips))  # 去重但顺序乱
-    config['userip'].clear()
-    for h in userips:
-        if init.check_ip(h) is True:
-            config['userip'].append(h)
-    init.config_update(config)
-    return index()
+    if request.method == 'POST':
+        userips = request.form['userips'].splitlines()
+        userips = list(set(userips))  # 去重但顺序乱
+        config['userip'].clear()
+        for h in userips:
+            if init.check_ip(h) is True:
+                config['userip'].append(h)
+        init.config_update(config)
+        return index()
+    else:
+        return index()
 
 
 # TODO 自动获取ip
-@app.route('/ddns', methods=['POST'])
+@app.route('/ddns', methods=['POST', 'GET'])
 def ddns():
-    ddnsip = request.form['ddnsips']
-    # ddnsip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
-    ddnsreturn = init.ddnspod(ddnsip)
-    if ddnsreturn == 1 or config['ddnsip'] != ddnsip:
-        config['ddnsip'] = ddnsip
-        init.config_update(config)
-    return index()
+    if request.method == 'POST':
+        ddnsip = request.form['ddnsips']
+        # ddnsip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
+        if init.check_ip(ddnsip) is True:
+            ddnsreturn = init.ddnspod(ddnsip)
+            if ddnsreturn == 1 or config['ddnsip'] != ddnsip:
+                config['ddnsip'] = ddnsip
+                init.config_update(config)
+        return index()
+    else:
+        return index()
 
 
 # BUG 中文无法安全上传
 # 现使用中文转拼音上传
 # 后续可能从secure_filename源码处修改
 # opencv putText的中文问题该解决
-@app.route('/face_upload', methods=['POST'])
+@app.route('/face_upload', methods=['POST', 'GET'])
 def face_upload():
-    f = request.files['file']
-    print(request.files)
-    f.save(os.path.join(
-        init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
-    return index()
+    if request.method == 'POST':
+        f = request.files['file']
+        print(request.files)
+        f.save(os.path.join(
+            init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
+        return index()
+    else:
+        return index()
+
+
+@app.route('/mqtt_publish', methods=['POST', 'GET'])
+def mqtt_publish():
+    try:
+        if request.method == 'POST':
+            device = request.form['devices'].splitlines()
+            devs = dict()
+            config['device'].clear()
+            for d in device:
+                dev = d.split(r':', 1)
+                if dev[0] == '':
+                    break
+                if dev[1] == '':
+                    dev[1] == 0
+                dev[1] = int(dev[1])
+                if dev[1] == 0:
+                    break
+                else:
+                    dev[1] = 1
+                devs[dev[0]] = dev[1]
+                print(devs)
+            config['device'] = devs
+            init.config_update(config)
+            return index()
+        else:
+            return index()
+    except:
+        config = init.config_read()
+        return index()
 
 
 @app.route('/video_pull')

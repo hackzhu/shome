@@ -26,6 +26,16 @@
       <input type="submit" value="DDNS" />
     </form>
     <br />
+    <form action="/mqtt_publish" method="POST">
+      <!-- 这里需要注意缩进,不然可能导致显示出的东西不符合预期 -->
+      <textarea name="devices">
+{% for key,value in device.items() %}{{ key }}:{{ value }}
+{% endfor %}</textarea
+      >
+      <!-- 这里需要注意缩进 -->
+      <input type="submit" value="更改" />
+    </form>
+    <br />
     <form action="/face_upload" method="POST" enctype="multipart/form-data">
       <input type="file" name="file" />
       <input type="submit" value="提交" />
@@ -37,14 +47,9 @@
     <p>{{ athome }}</p>
     {% endif %}
     <br />
-    {% for key,value in device.items() %}
-    {% if value == 1 %}
-    {{ key }}:开启
-    {% elif value == 0 %}
-    {{ key }}:关闭
-    {% else %}
-    {{ key }}:{{ value }}
-    {% endif %}
+    {% for key,value in device.items() %} {% if value == 1 %} {{ key }}:开启 {%
+    elif value == 0 %} {{ key }}:关闭 {% else %} {{ key }}:{{ value }} {% endif
+    %}
     <br />
     {% endfor %}
     <img src="{{ url_for('video_pull') }}" />
