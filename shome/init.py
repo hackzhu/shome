@@ -1,13 +1,17 @@
+#!/usr/bin/env python
+
 import json
 import os
 import IPy
 import requests
+import re
 
 import paho.mqtt.publish as mqttpublish
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
 configfile = os.path.join(tmpdir, 'config.json')
-mqttbroker = r"home.hackzhu.com"
+# mqttbroker = r"home.hackzhu.com"
+mqttbroker = r"127.0.0.1"
 mqttport = 1883
 configtopic = r'etc/config'
 ddnsdomain = r'home.hackzhu.com'
@@ -27,6 +31,7 @@ try:
             'esp0': 0,
             'esp1': 0
             # 可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
+            # 也可通过网页更改
         },
         'test': 'testext'
     }
@@ -45,6 +50,18 @@ def check_ip(ip) -> bool:
             return False
     except Exception:
         return False
+
+
+def get_ip() -> str:
+    try:
+        res = requests.get('http://ip6only.me')
+        ip = re.search(r'\+3>(.*?)</', res.content.decode('utf-8')).group(1)
+        if check_ip(ip):
+            return ip
+        else:
+            raise ConnectionError
+    except ConnectionError:
+        return '::1'
 
 
 def ping(ip) -> bool:
@@ -98,49 +115,46 @@ def at_home():
     return config['athome']
 
 
-def ddnspod(ip=None) -> int:
-    if ip != None:
-        subdomain, domain = ddnsdomain.split('.', 1)
-        ipversion = IPy.IP(ip).version()
-        if ipversion == 4:
-            recordtype = "A"
-        else:
-            recordtype = "AAAA"
-        listurl = r"https://dnsapi.cn/Record.List"
-        ddnsurl = r"https://dnsapi.cn/Record.Ddns"
-        headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
-        data = {
+def ddnspod(ip=None) -> str:
+    if ip is None:
+        ip = get_ip()
+    subdomain, domain = ddnsdomain.split('.', 1)
+    ipversion = IPy.IP(ip).version()
+    if ipversion == 4:
+        recordtype = "A"
+    else:
+        recordtype = "AAAA"
+    listurl = r"https://dnsapi.cn/Record.List"
+    ddnsurl = r"https://dnsapi.cn/Record.Ddns"
+    headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
+    data = {
+        'login_token': ddnstoken,
+        'format': 'json',
+        'domain': domain,
+        'sub_domain': subdomain
+    }
+    list = requests.post(url=listurl, headers=headers, data=data).text
+    list = json.loads(list)
+    recordid = list['records'][0]['id']
+    oldip = list['records'][0]['value']
+    if ip != oldip:
+        ddnsdata = {
             'login_token': ddnstoken,
             'format': 'json',
             'domain': domain,
-            'sub_domain': subdomain
+            'sub_domain': subdomain,
+            'record_id': recordid,
+            'record_type': recordtype,
+            'value': ip,
+            'record_line_id': '0'
         }
-        list = requests.post(url=listurl, headers=headers, data=data).text
-        list = json.loads(list)
-        recordid = list['records'][0]['id']
-        oldip = list['records'][0]['value']
-        if ip != oldip:
-            ddnsdata = {
-                'login_token': ddnstoken,
-                'format': 'json',
-                'domain': domain,
-                'sub_domain': subdomain,
-                'record_id': recordid,
-                'record_type': recordtype,
-                'value': ip,
-                'record_line_id': '0'
-            }
-            requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
-            return 1
-        else:
-            return 2
-    else:
-        return 0
+        requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
+    return ip
 
 
 # 用以测试
 def main():
-    pass
+    print(get_ip())
 
 
 if __name__ == '__main__':

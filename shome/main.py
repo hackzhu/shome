@@ -13,7 +13,8 @@ from pypinyin import lazy_pinyin
 
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
+app.config['MQTT_BROKER_URL'] = r'127.0.0.1'
+# app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
 app.config['MQTT_PASSWORD'] = ''  # 当你需要验证用户名和密码时，请设置该项
@@ -153,10 +154,12 @@ def user_ip():
 def ddns():
     if request.method == 'POST':
         ddnsip = request.form['ddnsips']
+        if ddnsip == '':
+            ddnsip = None
         # ddnsip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
-        if init.check_ip(ddnsip) is True:
-            ddnsreturn = init.ddnspod(ddnsip)
-            if ddnsreturn == 1 or config['ddnsip'] != ddnsip:
+        if init.check_ip(ddnsip) is True or ddnsip is None:
+            ddnsip = init.ddnspod(ddnsip)
+            if config['ddnsip'] != ddnsip:
                 config['ddnsip'] = ddnsip
                 init.config_update(config)
         return index()
