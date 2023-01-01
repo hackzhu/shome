@@ -26,7 +26,7 @@
       <input type="submit" value="DDNS" />
     </form>
     <br />
-    <form action="/mqtt_publish" method="POST">
+    <form action="/device_update" method="POST">
       <!-- 这里需要注意缩进,不然可能导致显示出的东西不符合预期 -->
       <textarea name="devices">
 {% for key,value in device.items() %}{{ key }}:{{ value }}
@@ -46,12 +46,6 @@
     {% else %}
     <p>{{ athome }}</p>
     {% endif %}
-    <br />
-    {% for key,value in device.items() %} {% if value == 1 %} {{ key }}:开启 {%
-    elif value == 0 %} {{ key }}:关闭 {% else %} {{ key }}:{{ value }} {% endif
-    %}
-    <br />
-    {% endfor %}
     <img src="{{ url_for('video_pull') }}" />
   </body>
 </html>

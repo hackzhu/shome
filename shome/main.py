@@ -13,7 +13,7 @@ from pypinyin import lazy_pinyin
 
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-app.config['MQTT_BROKER_URL'] = r'127.0.0.1'
+app.config['MQTT_BROKER_URL'] = '127.0.0.1'
 # app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
@@ -28,30 +28,34 @@ config = init.config_read()
 
 @mqttclient.on_connect()
 def mqtt_connect(client, userdata, flags, rc) -> None:
-    if rc == 0:
-        print('Connected successfully')  # BUG 无输出，可能是多线程的问题
-        mqttclient.publish(topic=init.configtopic, payload='online')
-        mqttclient.subscribe(mqtttopic)
-    else:
+    try:
+        if rc == 0:
+            print('Connected successfully')  # BUG 无输出，可能是多线程的问题
+            mqttclient.publish(topic=init.configtopic, payload='online')
+            mqttclient.subscribe(mqtttopic)
+        else:
+            print('Bad connection. Code:', rc)
+    except:
         print('Bad connection. Code:', rc)
 
 
 @mqttclient.on_message()
 def mqtt_callback(client, userdata, message) -> None:
     try:
+        global config
         # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
         payload = message.payload.decode()
         topic = message.topic
         if payload == 'online':
-            config['device'][topic.split(r'/', 1)[1]] = 1
+            config['device'][topic.split('/', 1)[1]] = 1
             init.config_update(config)
             return None
         elif payload == 'offline':
-            config['device'][topic.split(r'/', 1)[1]] = 0
+            config['device'][topic.split('/', 1)[1]] = 0
             init.config_update(config)
             return None
         elif payload == 'delete':
-            del config['device'][topic.split(r'/', 1)[1]]
+            del config['device'][topic.split('/', 1)[1]]
             init.config_update(config)
             return None
         elif payload == 'test':
@@ -66,7 +70,7 @@ def mqtt_callback(client, userdata, message) -> None:
         print('Key Error')
         return None
     except:
-        print('Other Error')
+        print('Error')
         return None
 
 
@@ -136,34 +140,43 @@ def xiaoai():
 
 @app.route('/userip_update', methods=['POST', 'GET'])
 def user_ip():
-    if request.method == 'POST':
-        userips = request.form['userips'].splitlines()
-        userips = list(set(userips))  # 去重但顺序乱
-        config['userip'].clear()
-        for h in userips:
-            if init.check_ip(h) is True:
-                config['userip'].append(h)
-        init.config_update(config)
-        return index()
-    else:
+    try:
+        global config
+        if request.method == 'POST':
+            userips = request.form['userips'].splitlines()
+            userips = list(set(userips))  # 去重但顺序乱
+            config['userip'].clear()
+            for h in userips:
+                if init.check_ip(h) is True:
+                    config['userip'].append(h)
+            init.config_update(config)
+            return index()
+        else:
+            return index()
+    except:
+        config = init.config_read()
         return index()
 
 
 # TODO 自动获取ip
 @app.route('/ddns', methods=['POST', 'GET'])
 def ddns():
-    if request.method == 'POST':
-        ddnsip = request.form['ddnsips']
-        if ddnsip == '':
-            ddnsip = None
-        # ddnsip = r'2001:0250:3401:6000:0000:0000:30c6:ceb7'
-        if init.check_ip(ddnsip) is True or ddnsip is None:
+    try:
+        global config
+        if request.method == 'POST':
+            ddnsip = request.form['ddnsips']
+            if ddnsip == '' or init.check_ip(ddnsip) is False:
+                ddnsip = None
+            # ddnsip = '2001:0250:3401:6000:0000:0000:30c6:ceb7'
             ddnsip = init.ddnspod(ddnsip)
             if config['ddnsip'] != ddnsip:
                 config['ddnsip'] = ddnsip
                 init.config_update(config)
-        return index()
-    else:
+            return index()
+        else:
+            return index()
+    except:
+        config = init.config_read()
         return index()
 
 
@@ -173,36 +186,44 @@ def ddns():
 # opencv putText的中文问题该解决
 @app.route('/face_upload', methods=['POST', 'GET'])
 def face_upload():
-    if request.method == 'POST':
-        f = request.files['file']
-        print(request.files)
-        f.save(os.path.join(
-            init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
-        return index()
-    else:
-        return index()
-
-
-@app.route('/mqtt_publish', methods=['POST', 'GET'])
-def mqtt_publish():
     try:
+        if request.method == 'POST':
+            f = request.files['file']
+            print(request.files)
+            f.save(os.path.join(
+                init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
+            return index()
+        else:
+            return index()
+    except:
+        return index()
+
+
+@app.route('/device_update', methods=['POST', 'GET'])
+def device_update():
+    try:
+        global config
         if request.method == 'POST':
             device = request.form['devices'].splitlines()
             devs = dict()
-            config['device'].clear()
             for d in device:
-                dev = d.split(r':', 1)
-                if dev[0] == '':
-                    break
-                if dev[1] == '':
-                    dev[1] == 0
-                dev[1] = int(dev[1])
-                if dev[1] == 0:
-                    break
+                if ':' in d:
+                    dev = d.split(':', 1)
+                    if dev[0] == '':
+                        break
+                    if dev[1] == '':
+                        dev[1] == 0
+                    try:
+                        dev[1] = int(dev[1])
+                    except ValueError:
+                        dev[1] = 0
+                    if dev[1] > 0:
+                        dev[1] = 1
+                    else:
+                        dev[1] = 0
+                    devs[dev[0]] = dev[1]
                 else:
-                    dev[1] = 1
-                devs[dev[0]] = dev[1]
-                print(devs)
+                    devs[dev[0]] = 0
             config['device'] = devs
             init.config_update(config)
             return index()

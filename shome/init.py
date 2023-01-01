@@ -10,12 +10,25 @@ import paho.mqtt.publish as mqttpublish
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
 configfile = os.path.join(tmpdir, 'config.json')
-# mqttbroker = r"home.hackzhu.com"
-mqttbroker = r"127.0.0.1"
+# mqttbroker = "home.hackzhu.com"
+mqttbroker = "127.0.0.1"
 mqttport = 1883
-configtopic = r'etc/config'
-ddnsdomain = r'home.hackzhu.com'
-ddnstoken = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
+configtopic = 'etc/config'
+ddnsdomain = 'home.hackzhu.com'
+ddnstoken = '336294,4da657cefe9db0f9ee4e882cf9a8986a'
+initdata = {
+    'userip': ['127.0.0.1', '::1'],
+    'athome': 0,
+    'ddnsip': '::1',
+    'device': {
+        'esp0': 0,
+        'esp1': 0
+        # 可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
+        # 也可通过网页更改
+        # TODO 命名有待商榷
+    },
+    'test': 'testext'
+}
 
 try:
     os.mkdir(tmpdir)
@@ -23,18 +36,6 @@ except OSError:
     pass
 try:
     os.mknod(configfile)
-    initdata = {
-        'userip': ['127.0.0.1', '::1'],
-        'athome': 0,
-        'ddnsip': r'2001:0250:3401:6000:0000:0000:30c6:ceb7',
-        'device': {
-            'esp0': 0,
-            'esp1': 0
-            # 可直接通过mqtt发送'online'和'offline'至'dev/{设备名}'主题实现添加，发送'delete'则删除
-            # 也可通过网页更改
-        },
-        'test': 'testext'
-    }
     with open(configfile, 'w') as cf:
         json.dump(obj=initdata, fp=cf, indent=4)
 except OSError:
@@ -48,15 +49,18 @@ def check_ip(ip) -> bool:
             return True
         else:
             return False
-    except Exception:
+    except:
         return False
 
 
-def get_ip() -> str:
+def get_ip(strict=0) -> str:
     try:
         res = requests.get('http://ip6only.me')
         ip = re.search(r'\+3>(.*?)</', res.content.decode('utf-8')).group(1)
         if check_ip(ip):
+            if strict == 1:
+                if ping(ip) is False:
+                    raise ConnectionError
             return ip
         else:
             raise ConnectionError
@@ -74,9 +78,12 @@ def ping(ip) -> bool:
 
 
 def config_read() -> dict:
-    with open(configfile, 'r') as cf:
-        data = json.load(cf)
-    return data
+    try:
+        with open(configfile, 'r') as cf:
+            data = json.load(cf)
+        return data
+    except:
+        return initdata
 
 
 def config_check(data) -> bool:

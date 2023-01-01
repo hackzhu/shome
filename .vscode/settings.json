@@ -5,6 +5,7 @@
   "files.associations": {
     "*.yaml": "home-assistant"
 },
+"code-runner.runInTerminal": false,
 "MicroPython.executeButton": [
     {
         "text": "▶",
