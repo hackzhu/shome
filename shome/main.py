@@ -13,66 +13,70 @@ from pypinyin import lazy_pinyin
 
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-app.config['MQTT_BROKER_URL'] = '127.0.0.1'
-# app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
+#app.config['MQTT_BROKER_URL'] = '127.0.0.1'
+app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
 app.config['MQTT_PASSWORD'] = ''  # 当你需要验证用户名和密码时，请设置该项
 app.config['MQTT_KEEPALIVE'] = 5  # 设置心跳时间，单位为秒
 app.config['MQTT_TLS_ENABLED'] = False  # 如果你的服务器支持 TLS，请设置为 True
 mqtttopic = 'dev/+'
-mqttclient = Mqtt(app)
+try:
+    mqttclient = Mqtt(app)
+except:
+    pass
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
 config = init.config_read()
 
-
-@mqttclient.on_connect()
-def mqtt_connect(client, userdata, flags, rc) -> None:
-    try:
-        if rc == 0:
-            print('Connected successfully')  # BUG 无输出，可能是多线程的问题
-            mqttclient.publish(topic=init.configtopic, payload='online')
-            mqttclient.subscribe(mqtttopic)
-        else:
+try:
+    @mqttclient.on_connect()
+    def mqtt_connect(client, userdata, flags, rc) -> None:
+        try:
+            if rc == 0:
+                print('Connected successfully')  # BUG 无输出，可能是多线程的问题
+                mqttclient.publish(topic=init.configtopic, payload='online')
+                mqttclient.subscribe(mqtttopic)
+            else:
+                print('Bad connection. Code:', rc)
+        except:
             print('Bad connection. Code:', rc)
-    except:
-        print('Bad connection. Code:', rc)
 
 
-@mqttclient.on_message()
-def mqtt_callback(client, userdata, message) -> None:
-    try:
-        global config
-        # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
-        payload = message.payload.decode()
-        topic = message.topic
-        if payload == 'online':
-            config['device'][topic.split('/', 1)[1]] = 1
-            init.config_update(config)
+    @mqttclient.on_message()
+    def mqtt_callback(client, userdata, message) -> None:
+        try:
+            global config
+            # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
+            payload = message.payload.decode()
+            topic = message.topic
+            if payload == 'online':
+                config['device'][topic.split('/', 1)[1]] = 1
+                init.config_update(config)
+                return None
+            elif payload == 'offline':
+                config['device'][topic.split('/', 1)[1]] = 0
+                init.config_update(config)
+                return None
+            elif payload == 'delete':
+                del config['device'][topic.split('/', 1)[1]]
+                init.config_update(config)
+                return None
+            elif payload == 'test':
+                print(topic+':test')
+                return None
+            payloadjson = json.loads(payload)
+            if payloadjson['test'] == 'testext':
+                print('test successfully')
+                return None
             return None
-        elif payload == 'offline':
-            config['device'][topic.split('/', 1)[1]] = 0
-            init.config_update(config)
+        except KeyError:
+            print('Key Error')
             return None
-        elif payload == 'delete':
-            del config['device'][topic.split('/', 1)[1]]
-            init.config_update(config)
+        except:
+            print('Error')
             return None
-        elif payload == 'test':
-            print(topic+':test')
-            return None
-        payloadjson = json.loads(payload)
-        if payloadjson['test'] == 'testext':
-            print('test successfully')
-            return None
-        return None
-    except KeyError:
-        print('Key Error')
-        return None
-    except:
-        print('Error')
-        return None
-
+except NameError:
+    pass
 
 # 视频推流
 def video_push():

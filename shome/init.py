@@ -68,10 +68,13 @@ def get_ip(strict=0) -> str:
         return '::1'
 
 
-def ping(ip) -> bool:
-    version = IPy.IP(ip).version()
-    response = os.system("ping -c 1 -W 500 -" +
-                         str(version) + ' ' + ip + " >/dev/null 2>&1")
+def ping(ip=None, domain=None) -> bool:
+    if domain == None:
+        version = IPy.IP(ip).version()
+        response = os.system("ping -c 1 -W 500 -" +
+                            str(version) + ' ' + ip + " >/dev/null 2>&1")
+    else:
+        response = os.system("ping -c 1 -W 500 " + domain + " >/dev/null 2>&1")
     if response == 0:
         return True
     return False
@@ -161,7 +164,12 @@ def ddnspod(ip=None) -> str:
 
 # 用以测试
 def main():
-    print(get_ip())
+    # print(get_ip())
+    try:
+        if ping(domain='baidu.com'):
+            print('q')
+    except ConnectionError:
+        print('0')
 
 
 if __name__ == '__main__':
