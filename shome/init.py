@@ -5,8 +5,12 @@ import os
 import IPy
 import requests
 import re
+import smtplib
 
 import paho.mqtt.publish as mqttpublish
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 
 tmpdir = os.path.join(os.getcwd(), 'tmp')
 configfile = os.path.join(tmpdir, 'config.json')
@@ -162,14 +166,40 @@ def ddnspod(ip=None) -> str:
     return ip
 
 
+def mail_send():
+    mailserver = 'smtp.qq.com'
+    mailuser = '3110497917'
+    mailpass = 'xjdgrnzdmauidfea'
+    sender = '3110497917@qq.com'
+    receivers = ['zhu@hackzhu.com']
+
+    message = MIMEMultipart()
+    message['From'] = sender
+    message['To'] = receivers[0]
+    message['Subject'] = 'title test'
+
+    content = MIMEText('content test', 'plain', 'utf-8')
+    with open('tmp/konqi.png', 'rb')as pic:
+        picture = MIMEImage(pic.read())
+        picture['Content-Type'] = 'application/octet-stream'
+        picture['Content-Disposition'] = 'attachment;filename="konqi.png"'
+
+    message.attach(content)
+    message.attach(picture)
+
+    try:
+        smtpObj = smtplib.SMTP_SSL(mailserver)
+        smtpObj.login(mailuser, mailpass)
+        smtpObj.sendmail(sender, receivers, message.as_string())
+        smtpObj.quit()
+        print('success')
+    except smtplib.SMTPException as e:
+        print('error', e)
+
+
 # 用以测试
 def main():
-    # print(get_ip())
-    try:
-        if ping(domain='baidu.com'):
-            print('q')
-    except ConnectionError:
-        print('0')
+    mail_send()
 
 
 if __name__ == '__main__':
