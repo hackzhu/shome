@@ -73,15 +73,19 @@ def get_ip(strict=0) -> str:
 
 
 def ping(ip=None, domain=None) -> bool:
-    if domain == None:
-        version = IPy.IP(ip).version()
-        response = os.system("ping -c 1 -W 500 -" +
-                            str(version) + ' ' + ip + " >/dev/null 2>&1")
-    else:
-        response = os.system("ping -c 1 -W 500 " + domain + " >/dev/null 2>&1")
-    if response == 0:
-        return True
-    return False
+    try:
+        if domain == None:
+            version = IPy.IP(ip).version()
+            response = os.system("ping -c 1 -W 500 -" +
+                                 str(version) + ' ' + ip + " >/dev/null 2>&1")
+        else:
+            response = os.system("ping -c 1 -W 500 " +
+                                 domain + " >/dev/null 2>&1")
+        if response == 0:
+            return True
+        return False
+    except:
+        return False
 
 
 def config_read() -> dict:
@@ -105,96 +109,109 @@ def config_check(data) -> bool:
 
 
 def config_update(data) -> None:
-    if config_check(data):
-        with open(configfile, 'w') as cf:
-            json.dump(obj=data, fp=cf, indent=4)
-        payload = json.dumps(obj=data)
-        mqttpublish.single(configtopic, payload, qos=0, retain=True,
-                           hostname=mqttbroker, port=mqttport)
-    else:
-        print('config update undone')
+    try:
+        if config_check(data):
+            with open(configfile, 'w') as cf:
+                json.dump(obj=data, fp=cf, indent=4)
+            payload = json.dumps(obj=data)
+            mqttpublish.single(configtopic, payload, qos=0, retain=True,
+                               hostname=mqttbroker, port=mqttport)
+        else:
+            print('config update undone')
+    except:
+        print('error')
 
 
 # TODO 寻找更适合的方法
 def at_home():
-    config = config_read()
-    for ui in config['userip']:
-        pingstatus = ping(ui)
-        if pingstatus is True:
-            config['athome'] = 1
-            break
-        else:
-            config['athome'] = 0
-    config_update(config)
-    return config['athome']
+    try:
+        config = config_read()
+        for ui in config['userip']:
+            pingstatus = ping(ui)
+            if pingstatus is True:
+                config['athome'] = 1
+                break
+            else:
+                config['athome'] = 0
+        config_update(config)
+        return config['athome']
+    except:
+        print('error')
 
 
 def ddnspod(ip=None) -> str:
-    if ip is None:
-        ip = get_ip()
-    subdomain, domain = ddnsdomain.split('.', 1)
-    ipversion = IPy.IP(ip).version()
-    if ipversion == 4:
-        recordtype = "A"
-    else:
-        recordtype = "AAAA"
-    listurl = r"https://dnsapi.cn/Record.List"
-    ddnsurl = r"https://dnsapi.cn/Record.Ddns"
-    headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
-    data = {
-        'login_token': ddnstoken,
-        'format': 'json',
-        'domain': domain,
-        'sub_domain': subdomain
-    }
-    list = requests.post(url=listurl, headers=headers, data=data).text
-    list = json.loads(list)
-    recordid = list['records'][0]['id']
-    oldip = list['records'][0]['value']
-    if ip != oldip:
-        ddnsdata = {
+    try:
+        if ip is None:
+            ip = get_ip()
+        subdomain, domain = ddnsdomain.split('.', 1)
+        ipversion = IPy.IP(ip).version()
+        if ipversion == 4:
+            recordtype = "A"
+        else:
+            recordtype = "AAAA"
+        listurl = r"https://dnsapi.cn/Record.List"
+        ddnsurl = r"https://dnsapi.cn/Record.Ddns"
+        headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
+        data = {
             'login_token': ddnstoken,
             'format': 'json',
             'domain': domain,
-            'sub_domain': subdomain,
-            'record_id': recordid,
-            'record_type': recordtype,
-            'value': ip,
-            'record_line_id': '0'
+            'sub_domain': subdomain
         }
-        requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
-    return ip
+        list = requests.post(url=listurl, headers=headers, data=data).text
+        list = json.loads(list)
+        recordid = list['records'][0]['id']
+        oldip = list['records'][0]['value']
+        if ip != oldip:
+            ddnsdata = {
+                'login_token': ddnstoken,
+                'format': 'json',
+                'domain': domain,
+                'sub_domain': subdomain,
+                'record_id': recordid,
+                'record_type': recordtype,
+                'value': ip,
+                'record_line_id': '0'
+            }
+            requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
+        return ip
+    except:
+        return '::1'
 
 
 def mail_send():
-    mailserver = 'smtp.qq.com'
-    mailuser = '3110497917'
-    mailpass = 'xjdgrnzdmauidfea'
-    sender = '3110497917@qq.com'
-    receivers = ['zhu@hackzhu.com']
-
-    message = MIMEMultipart()
-    message['From'] = sender
-    message['To'] = receivers[0]
-    message['Subject'] = 'title test'
-
-    content = MIMEText('content test', 'plain', 'utf-8')
-    with open('tmp/konqi.png', 'rb')as pic:
-        picture = MIMEImage(pic.read())
-        picture['Content-Type'] = 'application/octet-stream'
-        picture['Content-Disposition'] = 'attachment;filename="konqi.png"'
-
-    message.attach(content)
-    message.attach(picture)
-
     try:
+        mailserver = 'smtp.qq.com'
+        mailuser = '3110497917'
+        mailpass = 'xjdgrnzdmauidfea'
+        sender = '3110497917@qq.com'
+        receivers = ['zhu@hackzhu.com']
+
+        message = MIMEMultipart()
+        message['From'] = sender
+        message['To'] = receivers[0]
+        message['Subject'] = 'title test'
+
+        content = MIMEText('content test', 'plain', 'utf-8')
+        with open('tmp/konqi.png', 'rb')as pic:
+            picture = MIMEImage(pic.read())
+            picture['Content-Type'] = 'application/octet-stream'
+            picture['Content-Disposition'] = 'attachment;filename="konqi.png"'
+
+        message.attach(content)
+        message.attach(picture)
+
         smtpObj = smtplib.SMTP_SSL(mailserver)
         smtpObj.login(mailuser, mailpass)
         smtpObj.sendmail(sender, receivers, message.as_string())
         smtpObj.quit()
         print('success')
+    except FileNotFoundError:
+        print('picture file error')
     except smtplib.SMTPException as e:
         print('error', e)
+    except:
+        print('error')
 
 
 # 用以测试

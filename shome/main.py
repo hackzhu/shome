@@ -18,8 +18,8 @@ from pypinyin import lazy_pinyin
 
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-#app.config['MQTT_BROKER_URL'] = '127.0.0.1'
-app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
+app.config['MQTT_BROKER_URL'] = 'localhost'
+# app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
 app.config['MQTT_PASSWORD'] = ''  # 当你需要验证用户名和密码时，请设置该项
