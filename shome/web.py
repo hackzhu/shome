@@ -4,6 +4,7 @@ import os
 import cv2
 import init
 import json
+import func
 
 from flask import Flask, render_template, request, Response, redirect, url_for
 from flask_mqtt import Mqtt
@@ -16,16 +17,17 @@ from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
 # from xiaoai import *  # 小爱同学不支持IPv6
 
+init.mkfile()
+config = init.config_read()
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-app.config['MQTT_BROKER_URL'] = 'localhost'
-# app.config['MQTT_BROKER_URL'] = 'home.hackzhu.com'
-app.config['MQTT_BROKER_PORT'] = 1883
-app.config['MQTT_USERNAME'] = ''  # 当你需要验证用户名和密码时，请设置该项
-app.config['MQTT_PASSWORD'] = ''  # 当你需要验证用户名和密码时，请设置该项
-app.config['MQTT_KEEPALIVE'] = 5  # 设置心跳时间，单位为秒
-app.config['MQTT_TLS_ENABLED'] = False  # 如果你的服务器支持 TLS，请设置为 True
-mqtttopic = 'dev/+'
+app.config['MQTT_BROKER_URL'] = config['mqtt']['brober']
+app.config['MQTT_BROKER_PORT'] = config['mqtt']['port']
+app.config['MQTT_USERNAME'] = config['mqtt']['username']
+app.config['MQTT_PASSWORD'] = config['mqtt']['password']
+app.config['MQTT_KEEPALIVE'] = config['mqtt']['keepalive']  # 设置心跳时间，单位为秒
+# 如果你的服务器支持 TLS，请设置为 True
+app.config['MQTT_TLS_ENABLED'] = config['mqtt']['tls']
 try:
     mqttclient = Mqtt(app)
 except:
@@ -35,20 +37,6 @@ login_manager = LoginManager()  # 实例化登录管理对象
 login_manager.init_app(app)  # 初始化应用
 login_manager.login_view = 'login'  # 设置用户登录视图函数 endpoint
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
-config = init.config_read()
-
-USERS = [
-    {
-        "id": 1,
-        "name": 'li',
-        "password": generate_password_hash('123')
-    },
-    {
-        "id": 2,
-        "name": 'tom',
-        "password": generate_password_hash('123')
-    }
-]
 
 try:
     @mqttclient.on_connect()
@@ -56,8 +44,8 @@ try:
         try:
             if rc == 0:
                 print('Connected successfully')  # BUG 无输出，可能是多线程的问题
-                mqttclient.publish(topic=init.configtopic, payload='online')
-                mqttclient.subscribe(mqtttopic)
+                mqttclient.publish(topic=config['mqtt']['pubtopic'], payload='online')
+                mqttclient.subscribe(config['mqtt']['subtopic'])
             else:
                 print('Bad connection. Code:', rc)
         except:
@@ -67,26 +55,27 @@ try:
     def mqtt_callback(client, userdata, message) -> None:
         try:
             global config
+            config = init.config_read()
             # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
             payload = message.payload.decode()
             topic = message.topic
             if payload == 'online':
-                config['device'][topic.split('/', 1)[1]] = 1
+                config['mqtt']['payload'][topic.split('/', 1)[1]] = 1
                 init.config_update(config)
                 return None
             elif payload == 'offline':
-                config['device'][topic.split('/', 1)[1]] = 0
+                config['mqtt']['payload'][topic.split('/', 1)[1]] = 0
                 init.config_update(config)
                 return None
             elif payload == 'delete':
-                del config['device'][topic.split('/', 1)[1]]
+                del config['mqtt']['payload'][topic.split('/', 1)[1]]
                 init.config_update(config)
                 return None
             elif payload == 'test':
                 print(topic+':test')
                 return None
             payloadjson = json.loads(payload)
-            if payloadjson['test'] == 'testext':
+            if payloadjson['test'] == 1:
                 print('test successfully')
                 return None
             return None
@@ -108,6 +97,7 @@ class LoginForm(FlaskForm):
 
 class User(UserMixin):
     """用户类"""
+
     def __init__(self, user):
         self.username = user.get("name")
         self.password_hash = user.get("password")
@@ -128,7 +118,7 @@ class User(UserMixin):
         """根据用户ID获取用户实体，为 login_user 方法提供支持"""
         if not user_id:
             return None
-        for user in USERS:
+        for user in config['users']:
             if user.get('id') == user_id:
                 return User(user)
         return None
@@ -136,7 +126,7 @@ class User(UserMixin):
 
 def get_user(user_name):
     """根据用户名获得用户记录"""
-    for user in USERS:
+    for user in config['users']:
         if user.get("name") == user_name:
             return user
     return None
@@ -195,11 +185,13 @@ def xiaoai_input(event):
 @app.route('/')
 @login_required  # 需要登录才能访问
 def index():
+    global config
+    config=init.config_read()
     context = {
-        'userip': config.get('userip'),
-        'athome': config.get('athome'),
-        'ddnsip': config.get('ddnsip'),
-        'device': config.get('device'),
+        'userip': config['athome']['ip'],
+        'athome': config['athome']['status'],
+        'ddnsip': config['ddns']['ip'],
+        'device': config['mqtt']['payload'],
         'username': current_user.username
     }
     return render_template('index.html', **context)
@@ -248,10 +240,10 @@ def user_ip():
         if request.method == 'POST':
             userips = request.form['userips'].splitlines()
             userips = list(set(userips))  # 去重但顺序乱
-            config['userip'].clear()
+            config['athome']['ip'].clear()
             for h in userips:
-                if init.check_ip(h) is True:
-                    config['userip'].append(h)
+                if func.check_ip(h) is True:
+                    config['athome']['ip'].append(h)
             init.config_update(config)
             return index()
         else:
@@ -269,12 +261,12 @@ def ddns():
         global config
         if request.method == 'POST':
             ddnsip = request.form['ddnsips']
-            if ddnsip == '' or init.check_ip(ddnsip) is False:
+            if ddnsip == '' or func.check_ip(ddnsip) is False:
                 ddnsip = None
             # ddnsip = '2001:0250:3401:6000:0000:0000:30c6:ceb7'
-            ddnsip = init.ddnspod(ddnsip)
-            if config['ddnsip'] != ddnsip:
-                config['ddnsip'] = ddnsip
+            ddnsip = func.ddnspod(ddnsip)
+            if config['ddns']['ip'] != ddnsip:
+                config['ddns']['ip'] = ddnsip
                 init.config_update(config)
             return index()
         else:
@@ -296,7 +288,7 @@ def face_upload():
             f = request.files['file']
             print(request.files)
             f.save(os.path.join(
-                init.tmpdir, secure_filename(''.join(lazy_pinyin(f.filename)))))
+                'tmp', secure_filename(''.join(lazy_pinyin(f.filename)))))
             return index()
         else:
             return index()
@@ -330,7 +322,7 @@ def device_update():
                     devs[dev[0]] = dev[1]
                 else:
                     devs[dev[0]] = 0
-            config['device'] = devs
+            config['mqtt']['payload'] = devs
             init.config_update(config)
             return index()
         else:
