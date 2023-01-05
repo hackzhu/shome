@@ -4,8 +4,8 @@ import IPy
 import requests
 import re
 import smtplib
-import init
 
+from config import Config
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -64,8 +64,8 @@ def ping(ip=None, domain=None) -> bool:
 # TODO 寻找更适合的方法
 def at_home() -> int:
     try:
-        config = init.config_read()
-        for ui in config['athome']['userip']:
+        config = config.config_read()
+        for ui in config.config['athome']['userip']:
             pingstatus = ping(ui)
             if pingstatus is True:
                 athome = 1
@@ -120,12 +120,12 @@ def ddnspod(ip=None) -> str:
 
 def mail_send():
     try:
-        config = init.config_read()
-        mailserver = config['mail']['server']
-        mailuser = config['mail']['user']
-        mailpass = config['mail']['password']
-        sender = config['mail']['sender']
-        receivers = config['mail']['receivers']
+        config = Config()
+        mailserver = config.config['mail']['server']
+        mailuser = config.config['mail']['user']
+        mailpass = config.config['mail']['password']
+        sender = config.config['mail']['sender']
+        receivers = config.config['mail']['receivers']
 
         message = MIMEMultipart()
         message['From'] = sender
@@ -156,7 +156,7 @@ def mail_send():
 
 
 def main():
-    print(get_ip())
+    mail_send()
 
 
 if __name__ == '__main__':

@@ -8,3 +8,6 @@ IPy
 pypinyin
 flask-mqtt
 requests
+uwsgi
+flask-WTF
+flask-login

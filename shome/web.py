@@ -2,40 +2,39 @@
 
 import os
 import cv2
-import init
 import json
 import func
 
+from config import Config
 from flask import Flask, render_template, request, Response, redirect, url_for
 from flask_mqtt import Mqtt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
 # from xiaoai import *  # 小爱同学不支持IPv6
 
-init.mkfile()
-config = init.config_read()
+config = Config()
 app = Flask(__name__)
 # app.config['MQTT_CLIENT_ID'] = '' #默认随机
-app.config['MQTT_BROKER_URL'] = config['mqtt']['brober']
-app.config['MQTT_BROKER_PORT'] = config['mqtt']['port']
-app.config['MQTT_USERNAME'] = config['mqtt']['username']
-app.config['MQTT_PASSWORD'] = config['mqtt']['password']
-app.config['MQTT_KEEPALIVE'] = config['mqtt']['keepalive']  # 设置心跳时间，单位为秒
+app.config['MQTT_BROKER_URL'] = config.config['mqtt']['brober']
+app.config['MQTT_BROKER_PORT'] = config.config['mqtt']['port']
+app.config['MQTT_USERNAME'] = config.config['mqtt']['username']
+app.config['MQTT_PASSWORD'] = config.config['mqtt']['password']
+app.config['MQTT_KEEPALIVE'] = config.config['mqtt']['keepalive']  # 设置心跳时间，单位为秒
 # 如果你的服务器支持 TLS，请设置为 True
-app.config['MQTT_TLS_ENABLED'] = config['mqtt']['tls']
+app.config['MQTT_TLS_ENABLED'] = config.config['mqtt']['tls']
 try:
     mqttclient = Mqtt(app)
 except:
     pass
-app.config['SECRET_KEY'] = 'abc'  # 设置表单交互密钥
-login_manager = LoginManager()  # 实例化登录管理对象
-login_manager.init_app(app)  # 初始化应用
-login_manager.login_view = 'login'  # 设置用户登录视图函数 endpoint
+app.config['SECRET_KEY'] = 'abc'
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # /login
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
 
 try:
@@ -43,33 +42,31 @@ try:
     def mqtt_connect(client, userdata, flags, rc) -> None:
         try:
             if rc == 0:
-                print('Connected successfully')  # BUG 无输出，可能是多线程的问题
-                mqttclient.publish(topic=config['mqtt']['pubtopic'], payload='online')
-                mqttclient.subscribe(config['mqtt']['subtopic'])
+                print('mqtt connected')
+                mqttclient.publish(topic=config.config['mqtt']['pubtopic'], payload='online')
+                mqttclient.subscribe(config.config['mqtt']['subtopic'])
             else:
-                print('Bad connection. Code:', rc)
+                print('bad connection with code:', rc)
         except:
-            print('Bad connection. Code:', rc)
+            print('mqtt connection error')
 
     @mqttclient.on_message()
     def mqtt_callback(client, userdata, message) -> None:
         try:
-            global config
-            config = init.config_read()
             # ! mosqutto_pub 要用单引号括着内容，内容里要用双引号'{"light":"on"}'
             payload = message.payload.decode()
             topic = message.topic
             if payload == 'online':
-                config['mqtt']['payload'][topic.split('/', 1)[1]] = 1
-                init.config_update(config)
+                config.config['mqtt']['payload'][topic.split('/', 1)[1]] = 1
+                config.update()
                 return None
             elif payload == 'offline':
-                config['mqtt']['payload'][topic.split('/', 1)[1]] = 0
-                init.config_update(config)
+                config.config['mqtt']['payload'][topic.split('/', 1)[1]] = 0
+                config.update()
                 return None
             elif payload == 'delete':
-                del config['mqtt']['payload'][topic.split('/', 1)[1]]
-                init.config_update(config)
+                del config.config['mqtt']['payload'][topic.split('/', 1)[1]]
+                config.update()
                 return None
             elif payload == 'test':
                 print(topic+':test')
@@ -80,61 +77,54 @@ try:
                 return None
             return None
         except KeyError:
-            print('Key Error')
+            print('key error')
             return None
         except:
-            print('Error')
+            print('mqtt callback error')
             return None
 except NameError:
     pass
 
 
 class LoginForm(FlaskForm):
-    """登录表单类"""
     username = StringField('用户名', validators=[DataRequired()])
     password = PasswordField('密码', validators=[DataRequired()])
 
 
 class User(UserMixin):
-    """用户类"""
-
     def __init__(self, user):
         self.username = user.get("name")
         self.password_hash = user.get("password")
         self.id = user.get("id")
 
     def verify_password(self, password):
-        """密码验证"""
         if self.password_hash is None:
             return False
         return check_password_hash(self.password_hash, password)
 
     def get_id(self):
-        """获取用户ID"""
         return self.id
 
     @staticmethod
-    def get(user_id):
-        """根据用户ID获取用户实体，为 login_user 方法提供支持"""
-        if not user_id:
+    def get(userid):
+        if not userid:
             return None
-        for user in config['users']:
-            if user.get('id') == user_id:
+        for user in config.config['users']:
+            if user.get('id') == userid:
                 return User(user)
         return None
 
 
 def get_user(user_name):
-    """根据用户名获得用户记录"""
-    for user in config['users']:
+    for user in config.config['users']:
         if user.get("name") == user_name:
             return user
     return None
 
 
-@login_manager.user_loader  # 定义获取登录用户的方法
-def load_user(user_id):
-    return User.get(user_id)
+@login_manager.user_loader
+def load_user(userid):
+    return User.get(userid)
 
 
 # 视频推流
@@ -185,13 +175,11 @@ def xiaoai_input(event):
 @app.route('/')
 @login_required  # 需要登录才能访问
 def index():
-    global config
-    config=init.config_read()
     context = {
-        'userip': config['athome']['ip'],
-        'athome': config['athome']['status'],
-        'ddnsip': config['ddns']['ip'],
-        'device': config['mqtt']['payload'],
+        'userip': config.config['athome']['ip'],
+        'athome': config.config['athome']['status'],
+        'ddnsip': config.config['ddns']['ip'],
+        'device': config.config['mqtt']['payload'],
         'username': current_user.username
     }
     return render_template('index.html', **context)
@@ -236,20 +224,18 @@ def xiaoai():
 @login_required
 def user_ip():
     try:
-        global config
         if request.method == 'POST':
             userips = request.form['userips'].splitlines()
             userips = list(set(userips))  # 去重但顺序乱
-            config['athome']['ip'].clear()
+            config.config['athome']['ip'].clear()
             for h in userips:
                 if func.check_ip(h) is True:
-                    config['athome']['ip'].append(h)
-            init.config_update(config)
+                    config.config['athome']['ip'].append(h)
+            config.update()
             return index()
         else:
             return index()
     except:
-        config = init.config_read()
         return index()
 
 
@@ -258,21 +244,19 @@ def user_ip():
 @login_required
 def ddns():
     try:
-        global config
         if request.method == 'POST':
             ddnsip = request.form['ddnsips']
             if ddnsip == '' or func.check_ip(ddnsip) is False:
                 ddnsip = None
             # ddnsip = '2001:0250:3401:6000:0000:0000:30c6:ceb7'
             ddnsip = func.ddnspod(ddnsip)
-            if config['ddns']['ip'] != ddnsip:
-                config['ddns']['ip'] = ddnsip
-                init.config_update(config)
+            if config.config['ddns']['ip'] != ddnsip:
+                config.config['ddns']['ip'] = ddnsip
+                config.update()
             return index()
         else:
             return index()
     except:
-        config = init.config_read()
         return index()
 
 
@@ -300,7 +284,6 @@ def face_upload():
 @login_required
 def device_update():
     try:
-        global config
         if request.method == 'POST':
             device = request.form['devices'].splitlines()
             devs = dict()
@@ -322,13 +305,12 @@ def device_update():
                     devs[dev[0]] = dev[1]
                 else:
                     devs[dev[0]] = 0
-            config['mqtt']['payload'] = devs
-            init.config_update(config)
+            config.config['mqtt']['payload'] = devs
+            config.update()
             return index()
         else:
             return index()
     except:
-        config = init.config_read()
         return index()
 
 
