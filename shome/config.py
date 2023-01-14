@@ -10,7 +10,9 @@ from werkzeug.security import generate_password_hash
 class Config(object):
     tmpdir = os.path.join(os.getcwd(), 'tmp')
     configfile = os.path.join(tmpdir, 'config.json')
-    config = {
+    config = dict()
+    configinit = {
+        "init": True,
         "mqtt": {
             "brober": "localhost",
             "port": 1883,
@@ -67,18 +69,24 @@ class Config(object):
             pass
         try:
             os.mknod(self.configfile)
-            with open(self.configfile, 'w') as cf:
-                json.dump(obj=self.config, fp=cf, indent=4)
+            self.write(config=self.configinit)
+            self.config = self.configinit
         except OSError:
-            self.config = self.read()
+            self.read()
 
-    def read(self) -> dict:
+    def write(self, config) -> None:
+        try:
+            with open(self.configfile, 'w') as cf:
+                json.dump(obj=config, fp=cf, indent=4)
+        except:
+            pass
+
+    def read(self) -> None:
         try:
             with open(self.configfile, 'r') as cf:
-                data = json.load(cf)
-            return data
+                self.config = json.load(cf)
         except:
-            return self.config
+            self.config = dict()
 
     def check(self) -> bool:
         try:
@@ -93,8 +101,9 @@ class Config(object):
     def update(self) -> None:
         try:
             if self.check():
-                with open(self.configfile, 'w') as cf:
-                    json.dump(obj=self.config, fp=cf, indent=4)
+                if self.config['init'] is True:
+                    self.config['init'] = False
+                self.write(config=self.config)
                 payload = json.dumps(obj=self.config)
                 mqttpublish.single(self.config['mqtt']['pubtopic'], payload, qos=0, retain=True,
                                    hostname=self.config['mqtt']['brober'], port=self.config['mqtt']['port'])
@@ -106,8 +115,7 @@ class Config(object):
 
 def main():
     config = Config()
-    config.config = config.read()
-    config.update()
+    print(config.config)
 
 
 if __name__ == '__main__':

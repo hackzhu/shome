@@ -62,17 +62,16 @@ def ping(ip=None, domain=None) -> bool:
 
 
 # TODO 寻找更适合的方法
-def at_home() -> int:
+def at_home(config) -> int:
     try:
-        config = config.config_read()
         for ui in config.config['athome']['userip']:
             pingstatus = ping(ui)
             if pingstatus is True:
-                athome = 1
+                config.config['athome']['status'] = 1
                 break
             else:
-                athome = 0
-        return athome
+                config.config['athome']['status'] = 0
+        return config.config['athome']['status']
     except:
         print('error')
         return 2

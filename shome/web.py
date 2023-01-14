@@ -239,7 +239,7 @@ def user_ip():
         return index()
 
 
-# TODO 自动获取ip
+# TODO 多方式自动获取ip
 @app.route('/ddns', methods=['POST', 'GET'])
 @login_required
 def ddns():

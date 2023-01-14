@@ -10,7 +10,7 @@ config = Config()
 
 def main():
     while 1:
-        func.at_home()
+        func.at_home(config)
         sleep(5)
 
 
