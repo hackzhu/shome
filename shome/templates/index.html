@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
-    <title>shome customize</title>
-  </head>
-  <body>
+{% extends "base.html" %}
+{% block icon %}<link rel="icon" href="{{ url_for('static', filename='icon/index.svg') }}" />{% endblock %}
+{% block title %}index{% endblock %}
+{% block main %}
     <form action="/userip_update" method="POST">
       <!-- 这里需要注意缩进,不然可能导致显示出的东西不符合预期 -->
       <textarea name="userips">
@@ -50,5 +41,4 @@
     <br/>
     <h1>欢迎 {{ username }}！</h1>
     <a href='{{ url_for('logout')}}'>登出</a>
-  </body>
-</html>
+{% endblock %}

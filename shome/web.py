@@ -43,7 +43,8 @@ try:
         try:
             if rc == 0:
                 print('mqtt connected')
-                mqttclient.publish(topic=config.config['mqtt']['pubtopic'], payload='online')
+                mqttclient.publish(
+                    topic=config.config['mqtt']['pubtopic'], payload='online')
                 mqttclient.subscribe(config.config['mqtt']['subtopic'])
             else:
                 print('bad connection with code:', rc)
@@ -87,7 +88,7 @@ except NameError:
 
 
 class LoginForm(FlaskForm):
-    username = StringField('用户名', validators=[DataRequired()])
+    username = StringField('用户', validators=[DataRequired()])
     password = PasswordField('密码', validators=[DataRequired()])
 
 
@@ -115,9 +116,9 @@ class User(UserMixin):
         return None
 
 
-def get_user(user_name):
+def get_user(username):
     for user in config.config['users']:
-        if user.get("name") == user_name:
+        if user.get("name") == username:
             return user
     return None
 
@@ -190,9 +191,9 @@ def login():
     form = LoginForm()
     emsg = None
     if form.validate_on_submit():
-        user_name = form.username.data
+        username = form.username.data
         password = form.password.data
-        user_info = get_user(user_name)  # 从用户数据中查找用户记录
+        user_info = get_user(username)  # 从用户数据中查找用户记录
         if user_info is None:
             emsg = "用户名或密码密码有误"
         else:

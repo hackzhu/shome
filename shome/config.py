@@ -56,7 +56,7 @@ class Config(object):
             },
             {
                 "id": 2,
-                "name": "tom",
+                "name": "jinze",
                 "password": generate_password_hash("123")
             }
         ]

@@ -1,0 +1,25 @@
+@media screen and (min-width: 950px) {
+  .login {
+    overflow: auto;
+    margin: auto;
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 0;
+    /* left: 0; */
+    bottom: 0;
+    right: 0;
+  }
+}
+
+@media screen and (max-width: 950px) {
+  .login {
+    overflow: auto;
+    margin: auto;
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    left: 25%;
+    top: 40%;
+  }
+}
