@@ -4,6 +4,7 @@ import os
 import cv2
 import json
 import func
+import logging
 
 from config import Config
 from flask import Flask, render_template, request, Response, redirect, url_for
@@ -16,6 +17,17 @@ from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
 # from xiaoai import *  # 小爱同学不支持IPv6
+
+tmpdir = os.path.join(os.getcwd(), 'tmp')
+try:
+    os.mkdir(tmpdir)
+except OSError:
+    pass
+logfile = os.path.join(tmpdir, 'shome.log')
+try:
+    os.mknod(logfile)
+except OSError:
+    pass
 
 config = Config()
 app = Flask(__name__)
@@ -35,6 +47,11 @@ app.config['SECRET_KEY'] = 'abc'
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # /login
+logformat = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+loghandler = logging.FileHandler(logfile, encoding='UTF-8')
+loghandler.setLevel(logging.DEBUG)
+loghandler.setFormatter(logformat)
+app.logger.addHandler(loghandler)
 cvfont = cv2.FONT_HERSHEY_SIMPLEX
 
 try:
@@ -196,6 +213,7 @@ def login():
         user_info = get_user(username)  # 从用户数据中查找用户记录
         if user_info is None:
             emsg = "用户名或密码密码有误"
+            app.logger.error('login false with ' + username + ' ' + password)
         else:
             user = User(user_info)  # 创建用户实体
             if user.verify_password(password):  # 校验密码
@@ -203,6 +221,7 @@ def login():
                 return redirect(request.args.get('next') or url_for('index'))
             else:
                 emsg = "用户名或密码密码有误"
+                app.logger.error('login false with ' + username + ' ' + password)
     return render_template('login.html', form=form, emsg=emsg)
 
 
@@ -233,6 +252,7 @@ def user_ip():
                 if func.check_ip(h) is True:
                     config.config['athome']['ip'].append(h)
             config.update()
+            app.logger.warning('userip config update')
             return index()
         else:
             return index()
@@ -254,6 +274,7 @@ def ddns():
             if config.config['ddns']['ip'] != ddnsip:
                 config.config['ddns']['ip'] = ddnsip
                 config.update()
+                app.logger.warning('ddnsip config update')
             return index()
         else:
             return index()
@@ -308,6 +329,8 @@ def device_update():
                     devs[dev[0]] = 0
             config.config['mqtt']['payload'] = devs
             config.update()
+            app.logger.warning('device config update')
+            # TODO 具体到什么设备
             return index()
         else:
             return index()
