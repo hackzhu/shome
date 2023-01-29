@@ -11,3 +11,4 @@ requests
 uwsgi
 flask-WTF
 flask-login
+pyaudio
