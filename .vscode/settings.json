@@ -1,10 +1,11 @@
 {
   "code-runner.executorMap": {
     "python": "/usr/bin/env python"
-},
-"files.associations": {
+  },
+  "files.associations": {
     "*.yaml": "home-assistant"
 },
+"code-runner.runInTerminal": false,
 "MicroPython.executeButton": [
     {
         "text": "▶",
@@ -22,15 +23,5 @@
         "command": "extension.execute",
         "priority": 4
     }
-],
-"python.autoComplete.extraPaths": [
-    "/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
-],
-"python.linting.pylintArgs": [
-    "--init-hook",
-    "import sys; sys.path.append('/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion')"
-],
-"python.analysis.extraPaths": [
-    "/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
 ]
 }

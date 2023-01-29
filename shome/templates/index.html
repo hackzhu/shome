@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block icon %}<link rel="icon" href="{{ url_for('static', filename='icon/index.svg') }}" />{% endblock %}
+{% block title %}index{% endblock %}
+{% block main %}
+    <form action="/userip_update" method="POST">
+      <!-- 这里需要注意缩进,不然可能导致显示出的东西不符合预期 -->
+      <textarea name="userips">
+{% for n in userip %}{{ n }}
+{% endfor %}</textarea
+      >
+      <!-- 这里需要注意缩进 -->
+      <input type="submit" value="更新" />
+    </form>
+    <br />
+    <form action="/ddns" method="POST">
+      <textarea name="ddnsips">{{ ddnsip }}</textarea>
+      <input type="submit" value="DDNS" />
+    </form>
+    <br />
+    <form action="/device_update" method="POST">
+      <!-- 这里需要注意缩进,不然可能导致显示出的东西不符合预期 -->
+      <textarea name="devices">
+{% for key,value in device.items() %}{{ key }}:{{ value }}
+{% endfor %}</textarea
+      >
+      <!-- 这里需要注意缩进 -->
+      <input type="submit" value="更改" />
+    </form>
+    <br />
+    <form action="/face_upload" method="POST" enctype="multipart/form-data">
+      <input type="file" name="file" />
+      <input type="submit" value="提交" />
+    </form>
+    <br />
+    {% if athome == '1' %}
+    <p>居家</p>
+    {% else %}
+    <p>{{ athome }}</p>
+    {% endif %}
+    <img src="{{ url_for('video_pull') }}" />
+    <br/>
+    <h1>欢迎 {{ username }}！</h1>
+    <a href='{{ url_for('logout')}}'>登出</a>
+{% endblock %}

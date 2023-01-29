@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block icon %}<link rel="icon" href="{{ url_for('static', filename='icon/login.svg') }}" />{% endblock %}
+{% block title %}login{% endblock %}
+{% block main %}
+    {% macro render_field(field) %}
+    <!-- 定义字段宏 -->
+    {{ field.label }}: {{ field(**kwargs)|safe }}</br> {% if field.errors %}
+    <ul>
+      {% for error in field.errors %}
+      <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endmacro %}
+
+    <!-- 登录表单 -->
+    <form method="POST" class="login">
+      {{ form.csrf_token }} {{ render_field(form.username) }}
+      {{render_field(form.password) }} {% if emsg %}
+      <!-- 如果有错误信息 则显示 -->
+      <h3>{{ emsg }}</h3>
+      {% endif %}
+      <input type="submit" value="登录" />
+    </form>
+{% endblock %}
