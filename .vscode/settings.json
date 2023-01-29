@@ -1,10 +1,36 @@
 {
-  "vscode-home-assistant.hostUrl": "http://raspi:8123",
-  "vscode-home-assistant.ignoreCertificates": true,
-  "vscode-home-assistant.longLivedAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI2ODJkYzA4MDZjNzQ0MDdlODRiZTA2MzcwYjVkMjA1YiIsImlhdCI6MTY2MjcxNzg1MywiZXhwIjoxOTc4MDc3ODUzfQ.-8dShDHcatGQQh79VGt7NqrwhhVV1HdpJ9fW_yipHMY",
-  "files.associations": {
-    "*.yaml": "home-assistant"
-  },
   "code-runner.executorMap": {
-    "python": ".env/bin/python"
+    "python": "/usr/bin/env python"
+},
+"files.associations": {
+    "*.yaml": "home-assistant"
+},
+"MicroPython.executeButton": [
+    {
+        "text": "▶",
+        "tooltip": "运行",
+        "alignment": "left",
+        "command": "extension.executeFile",
+        "priority": 3.5
+    }
+],
+"MicroPython.syncButton": [
+    {
+        "text": "$(sync)",
+        "tooltip": "同步",
+        "alignment": "left",
+        "command": "extension.execute",
+        "priority": 4
+    }
+],
+"python.autoComplete.extraPaths": [
+    "/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
+],
+"python.linting.pylintArgs": [
+    "--init-hook",
+    "import sys; sys.path.append('/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion')"
+],
+"python.analysis.extraPaths": [
+    "/home/zhu/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
+]
 }

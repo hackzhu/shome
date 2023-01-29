@@ -108,6 +108,7 @@ python:paho.mqtt
 
 hass 侧边仪表盘添加网页卡片（可以不用 supervisor）
 将私人配置和 opencv 的都基于 flask 开发
+只在访问时用flask,其余都在后台运行
 
 #### 远程管理
 

@@ -3,10 +3,12 @@
 from flask import Flask, render_template, request, Response
 from werkzeug.utils import secure_filename
 from pypinyin import lazy_pinyin
+from xiaoai import *
 
 import os
 import cv2
 import init
+import requests
 
 app = Flask(__name__)
 
@@ -36,22 +38,23 @@ def video_push():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-# @app.before_request
-# def at_home():
-#     global config
-#     for ui in config['userip']:
-#         ping = os.system("ping -c 1 -W 500 " + ui + " >/dev/null 2>&1")
-#         if ping == 0:
-#             break
-#         else:
-#             ping = 1
-#     with open(init.configfile, 'w', encoding='utf8') as ah:
-#         if ping == 0:
-#             config['athome'] = '1'
-#         else:
-#             config['athome'] = '1'
-#     init.config_update(config)
-#     return None
+def xiaoai_output(toSpeakText, is_session_end, openMic=True):
+    xiaoAIResponse = XiaoAIResponse(to_speak=XiaoAIToSpeak(
+        type_=0, text=toSpeakText), open_mic=openMic)
+    response = xiaoai_response(XiaoAIOpenResponse(version="1.0",
+                                                  is_session_end=is_session_end,
+                                                  response=xiaoAIResponse))
+    return response
+
+
+def xiaoai_input(event):
+    req = xiaoai_request(event)
+    if req.request.type == 0:
+        return '0'
+    elif req.requests.type == 1:
+        return '1'
+    else:
+        return '2'
 
 
 @app.route('/')
@@ -63,14 +66,19 @@ def index():
     return render_template('index.html', **context)
 
 
+@app.route('/xiaoai', methods=['POST'])
+def xiaoai():
+    response = xiaoai_input(request.json)
+    return response
+
+
 @app.route('/userip_update', methods=['POST'])
 def user_ip():
-    global config
     userips = request.form['userips'].splitlines()
     userips = list(set(userips))  # 去重但乱
     config['userip'].clear()
     for h in userips:
-        if init.check_ip(h) == True:
+        if init.check_ip(h) is True:
             config['userip'].append(h)
     init.config_update(config)
     return index()
@@ -94,6 +102,45 @@ def video_pull():
     return Response(video_push(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# BUG 无法使用摄像头
+@app.route('/ddns', methods=['POST'])
+def ddnspod():
+    newip = r"2001:0250:3401:6000:0000:0000:30c6:ceb7"
+    token = r"336294,4da657cefe9db0f9ee4e882cf9a8986a"
+    subdomain = "home"
+    domain = "hackzhu.com"
+    recordtype = "AAAA"
+    listurl = r"https://dnsapi.cn/Record.List"
+    ddnsurl = r"https://dnsapi.cn/Record.Ddns"
+    headers = {'User-Agent': r'hackddns/1.0.0(3110497917@qq.com)'}
+    data = {
+        'login_token': token,
+        'format': 'json',
+        'domain': domain,
+        'sub_domain': subdomain
+    }
+    list = requests.post(url=listurl, headers=headers, data=data).text
+    lists = json.loads(list)
+    recordid = lists['records'][0]['id']
+    oldip = lists['records'][0]['value']
+    if newip != oldip:
+        ddnsdata = {
+            'login_token': token,
+            'format': 'json',
+            'domain': domain,
+            'sub_domain': subdomain,
+            'record_id': recordid,
+            'record_type': recordtype,
+            'value': newip,
+            'record_line_id': '0'
+        }
+        requests.post(url=ddnsurl, headers=headers, data=ddnsdata)
+        config['ip'] = newip
+        init.config_update(config)
+    return index()
 
+# TODO 改换nginx
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print('https://home.hackzhu.com:8443')
+    app.run(host='0.0.0.0', port=8443, debug=True, ssl_context=(
+        'ssl_certs/home.hackzhu.com_bundle.pem', 'ssl_certs/home.hackzhu.com.key'))

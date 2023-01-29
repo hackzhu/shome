@@ -1,6 +1,5 @@
 RPi.GPIO
 paho.mqtt
-pyserial
 python-opencv
 pillow
 opencv-contrib-python
