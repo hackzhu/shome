@@ -21,5 +21,5 @@ class Awake():
 
 # 测试
 if __name__ == "__main__":
-    xiaopi = Awake(os.getcwd()+"/shome/xiaopi.pmdl")
+    xiaopi = Awake(os.path.dirname(os.path.abspath(__file__)) + '/xiaopi.pmdl')
     xiaopi.run()

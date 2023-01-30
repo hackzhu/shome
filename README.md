@@ -93,6 +93,30 @@ mqtt with ssl 端口：8883
 > client
 
 shell:mosquitto
+
+mosquitto_sub -h localhost -t test
+mosquitto_pub -h localhost -t test -m 'test'
+
+mosquitto_pub 命令参数说明
+
+1. -d  打印debug信息
+2. -f  将指定文件的内容作为发送消息的内容
+3. -h  指定要连接的域名  默认为localhost
+4. -i  指定要给哪个clientId的用户发送消息
+5. -I  指定给哪个clientId前缀的用户发送消息
+6. -m  消息内容
+7. -n  发送一个空（null）消息
+8. -p  连接端口号
+9. -q  指定QoS的值（0,1,2）
+10. -t  指定topic
+11. -u  指定broker访问用户
+12. -P  指定broker访问密码
+13. -V  指定MQTT协议版本
+14. --will-payload  指定一个消息，该消息当客户端与broker意外断开连接时发出。该参数需要与--will-topic一起使用
+15. --will-qos  Will的QoS值。该参数需要与--will-topic一起使用
+16. --will-retain 指定Will消息被当做一个retain消息（即消息被广播后，该消息被保留起来）。该参数需要与--will-topic一起使用
+17. --will-topic  用户发送Will消息的topic
+
 python:paho.mqtt
 <PubSubClient.h>
 
