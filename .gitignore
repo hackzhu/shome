@@ -6,6 +6,7 @@ __pycache__/
 upload/
 *data
 tmp
+tempCodeRunnerFile.py
 test
 # C extensions
 # Distribution / packaging

@@ -3,23 +3,40 @@
 import snowboydecoder
 import os
 
+tmpdir = os.path.join(os.getcwd(), 'tmp')
+try:
+    os.mkdir(tmpdir)
+except OSError:
+    pass
 
-class Awake():
-    def __init__(self, model, sensitivity=0.5, sleep_time=0.03):
+path = os.path.dirname(os.path.abspath(__file__))
+initword = os.path.join(path, 'resources', 'xiaopi.pmdl')
+word = os.path.join(tmpdir, 'wakeup.pmdl')
+try:
+    os.system('cp -n ' + initword + ' ' + word)
+except:
+    pass
+
+dingfile = os.path.join(path, 'resources', 'ding.wav')
+
+
+class Wakeup():
+    def __init__(self, model, sensitivity=0.5):
         self.model = model
         self.sensitivity = sensitivity
-        self.sleep_time = sleep_time
 
-    def run(self):
+    def listen(self):
         print('listening...')
         detector = snowboydecoder.HotwordDetector(
             self.model, sensitivity=self.sensitivity)
-        detector.start(
-            detected_callback=snowboydecoder.play_audio_file, sleep_time=self.sleep_time)
+        detector.start(detected_callback=self.callback)
         detector.terminate()
 
+    def callback(self):
+        snowboydecoder.play_audio_file(fname=dingfile)
+        # TODO 树莓派连接SU-10A
 
-# 测试
+
 if __name__ == "__main__":
-    xiaopi = Awake(os.path.dirname(os.path.abspath(__file__)) + '/xiaopi.pmdl')
-    xiaopi.run()
+    xiaopi = Wakeup(word)
+    xiaopi.listen()

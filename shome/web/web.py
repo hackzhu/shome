@@ -221,7 +221,8 @@ def login():
                 return redirect(request.args.get('next') or url_for('index'))
             else:
                 emsg = "用户名或密码密码有误"
-                app.logger.error('login false with ' + username + ' ' + password)
+                app.logger.error('login false with ' +
+                                 username + ' ' + password)
     return render_template('login.html', form=form, emsg=emsg)
 
 
@@ -286,15 +287,18 @@ def ddns():
 # 现使用中文转拼音上传
 # 后续可能从secure_filename源码处修改
 # opencv putText的中文问题该解决
-@app.route('/face_upload', methods=['POST', 'GET'])
+@app.route('/file_upload', methods=['POST', 'GET'])
 @login_required
-def face_upload():
+def file_upload():
     try:
         if request.method == 'POST':
             f = request.files['file']
-            print(request.files)
-            f.save(os.path.join(
-                'tmp', secure_filename(''.join(lazy_pinyin(f.filename)))))
+            suffix = f.filename.split('.')[-1]
+            if suffix == 'pmdl':
+                f.save(os.path.join(tmpdir, secure_filename(''.join('wakeup.pmdl'))))
+            else:
+                f.save(os.path.join(tmpdir, secure_filename(
+                    ''.join(lazy_pinyin(f.filename)))))
             return index()
         else:
             return index()
